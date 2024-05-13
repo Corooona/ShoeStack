@@ -1,0 +1,111 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.titulo-principal {
+    color: #fff;
+    margin-top: 20px;
+    background-color: #2A4B6A;
+    padding: 10px 20px;
+    margin-bottom: 20px; 
+    font-weight: bold;
+    font-size: 25px;
+    text-align: center;
+    display: inline-block; 
+    width: 500px; 
+}
+
+.superior{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.container{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.main-container {
+    padding: 20px;
+    
+}
+
+h2 {
+    color: #0077b6;
+    margin-top: 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+select {
+    padding: 5px;
+    width: 200px;
+
+}
+
+.edit-link {
+    color: #0077b6;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.form-actions {
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primary {
+    background-color: #0077b6;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #ddd;
+    color: #333;
+}
+
+.agregar{
+    margin-left: 10px;
+}
+
+.registrar{
+    background-color: #0077b6;
+    color: #fff;
+    border: none;
+    font-weight: bold;
+    width: 90px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.reset{
+    color: white; 
+    background-color: red;
+    border: none;
+    font-weight: bold;
+    width: 90px;
+    height: 30px;
+    cursor: pointer;
+}

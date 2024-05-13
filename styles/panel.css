@@ -1,0 +1,110 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.main-container {
+    padding: 20px;
+}
+
+.add-new-btn {
+    font-weight: bold;
+    background-color: #2A4B6A;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    
+}
+
+.superior{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.titulo-principal {
+    color: #fff;
+    margin-top: 20px;
+    background-color: #2A4B6A;
+    padding: 10px 20px;
+    margin-bottom: 20px; 
+    font-weight: bold;
+    font-size: 25px;
+    text-align: center;
+    display: inline-block; 
+    width: 500px; 
+}
+
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #2A4B6A;
+    color: #fff;
+}
+
+.fa-pen {
+    color: white; 
+    background-color: #2A4B6A;
+    border-radius: 50px;
+    font-size: 20px;
+    padding: 10px;
+
+}
+
+.fa-trash {
+    color: white; 
+    background-color: red;
+    border-radius: 50px;
+    font-size: 20px;
+    padding: 10px;
+}
+
+.buscar {
+    background-color: #2A4B6A;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+  }
+  
+  .buscar form {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .buscar input[type="text"] {
+    padding: 0 10px;
+    border: none;
+    background-color: transparent;
+    color: #fff;
+    outline: none;
+  }
+  
+  .buscar button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  .fa-magnifying-glass {
+    color: #6CBFDF;
+    font-size: 20px;
+  }

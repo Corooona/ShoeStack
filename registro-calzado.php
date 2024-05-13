@@ -45,7 +45,7 @@ $sqlTallaTabla = "SELECT ct.id_calzado, c.modelo, t.talla
               FROM calzado_talla ct
               INNER JOIN calzado c ON ct.id_calzado = c.id_calzado
               INNER JOIN talla t ON ct.id_talla = t.id_talla";
-$resultadoTablaTalla = $conexion->query($sqlTallaTabla);
+
 
 
 if (isset($_POST["registrar"])) {
@@ -308,6 +308,33 @@ if (isset($_POST["registrar-talla"])) {
         </tbody>
     </table>
 
+    <!-- TABLA DONDE SE MUESTRAN LAS TALLAS -->
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Modelo</th>
+                <th scope="col">Talla</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            $resultadoTablaTalla = $conexion->query($sqlTallaTabla);
+            while ($row = mysqli_fetch_assoc($resultadoTablaTalla)) {
+                ?>
+                <tr>
+                    <td>
+                        <?php echo $row["modelo"] ?>
+                    </td>
+
+                    <td>
+                        <?php echo $row["talla"] ?>
+                    </td>
+                </tr>
+                <?php
+            }
+            ?>
+        </tbody>
+    </table>
 </body>
 
 </html>
