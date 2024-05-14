@@ -47,6 +47,36 @@ $sqlTallaTabla = "SELECT ct.id_calzado, c.modelo, t.talla
               INNER JOIN talla t ON ct.id_talla = t.id_talla";
 
 
+// Eliminación de colores
+if (isset($_POST["eliminar-color"])) {
+    $modelo = mysqli_real_escape_string($conexion, $_POST["id_calzado"]);
+    $color = mysqli_real_escape_string($conexion, $_POST["id_color"]);
+
+    $queryEliminarColor = "DELETE FROM calzado_color WHERE id_calzado = '$modelo' AND id_color = '$color'";
+    $resultadoEliminarColor = $conexion->query($queryEliminarColor);
+
+    if ($resultadoEliminarColor) {
+        echo "<script>alert('Color eliminado correctamente');</script>";
+    } else {
+        echo "<script>alert('Error al eliminar el color');</script>";
+    }
+}
+
+// Eliminación de tallas
+if (isset($_POST["eliminar-talla"])) {
+    $modelo = mysqli_real_escape_string($conexion, $_POST["id_calzado"]);
+    $talla = mysqli_real_escape_string($conexion, $_POST["id_talla"]);
+
+    $queryEliminarTalla = "DELETE FROM calzado_talla WHERE id_calzado = '$modelo' AND id_talla = '$talla'";
+    $resultadoEliminarTalla = $conexion->query($queryEliminarTalla);
+
+    if ($resultadoEliminarTalla) {
+        echo "<script>alert('Talla eliminada correctamente');</script>";
+    } else {
+        echo "<script>alert('Error al eliminar la talla');</script>";
+    }
+}
+
 
 if (isset($_POST["registrar"])) {
     $modelo = mysqli_real_escape_string($conexion, $_POST["modelo"]);
@@ -77,52 +107,62 @@ if (isset($_POST["registrar"])) {
 }
 
 
+
 if (isset($_POST["registrar-color"])) {
     $modelo = mysqli_real_escape_string($conexion, $_POST["id_calzado"]);
-    $color = mysqli_real_escape_string($conexion, $_POST["id_color"]);
+    // Obtener los colores seleccionados
+    $colores = $_POST["colores"];
 
-    $queryCalzadoColor = "SELECT id_cal_color FROM calzado_color WHERE id_color = '$color'";
-    $conecQueryCalzadoColor = $conexion->query($queryCalzadoColor);
-    $filas = $conecQueryCalzadoColor->num_rows;
+    foreach ($colores as $color) {
+        // Verificar si el par (id_calzado, id_color) ya existe en la tabla calzado_color
+        $queryCalzadoColor = "SELECT id_cal_color FROM calzado_color WHERE id_calzado = '$modelo' AND id_color = '$color'";
+        $conecQueryCalzadoColor = $conexion->query($queryCalzadoColor);
+        $filas = $conecQueryCalzadoColor->num_rows;
 
-    if ($filas > 0) {
-        echo "<script>alert('El color ya está dentro del modelo');</script>";
-    } else {
-        // Insertar el nuevo modelo
-        $sqlInsertarColor = "INSERT INTO calzado_color(id_calzado,id_color) 
-                       VALUES('$modelo','$color')";
-        $conecCalzado = $conexion->query($sqlInsertarColor);
-
-        if ($conecCalzado) {
-            echo "<script>alert('Registro exitoso');</script>";
+        if ($filas > 0) {
+            echo "<script>alert('El color ya está dentro del modelo');</script>";
         } else {
-            echo "<script>alert('Error al registrarse');</script>";
+            // Insertar el nuevo color para el modelo
+            $sqlInsertarColor = "INSERT INTO calzado_color(id_calzado,id_color) 
+                           VALUES('$modelo','$color')";
+            $conecCalzado = $conexion->query($sqlInsertarColor);
+
+            if ($conecCalzado) {
+                echo "<script>alert('Registro exitoso');</script>";
+            } else {
+                echo "<script>alert('Error al registrarse');</script>";
+            }
         }
     }
 }
 
-
 if (isset($_POST["registrar-talla"])) {
     $modelo = mysqli_real_escape_string($conexion, $_POST["id_calzado"]);
-    $talla = mysqli_real_escape_string($conexion, $_POST["id_talla"]);
+    // Verificar si se han seleccionado tallas
+    if(isset($_POST["tallas"]) && !empty($_POST["tallas"])) {
+        // Recorrer todas las tallas seleccionadas
+        foreach($_POST["tallas"] as $talla) {
+            // Verificar si la talla ya está asociada al modelo
+            $queryCalzadoTalla = "SELECT id_cal_talla FROM calzado_talla WHERE id_calzado = '$modelo' AND id_talla = '$talla'";
+            $conecQueryCalzadoTalla = $conexion->query($queryCalzadoTalla);
+            $filas = $conecQueryCalzadoTalla->num_rows;
 
-    $queryCalzadoTalla = "SELECT id_cal_talla FROM calzado_talla WHERE id_talla = '$talla'";
-    $conecQueryCalzadoTalla = $conexion->query($queryCalzadoTalla);
-    $filas = $conecQueryCalzadoTalla->num_rows;
+            if ($filas > 0) {
+                echo "<script>alert('La talla ya está dentro del modelo');</script>";
+            } else {
+                // Insertar la nueva talla para el modelo seleccionado
+                $sqlInsertarTalla = "INSERT INTO calzado_talla(id_calzado,id_talla) 
+                           VALUES('$modelo','$talla')";
+                $conecCalzado = $conexion->query($sqlInsertarTalla);
 
-    if ($filas > 0) {
-        echo "<script>alert('La talla ya está dentro del modelo');</script>";
-    } else {
-        // Insertar el nuevo modelo
-        $sqlInsertarTalla = "INSERT INTO calzado_talla(id_calzado,id_talla) 
-                       VALUES('$modelo','$talla')";
-        $conecCalzado = $conexion->query($sqlInsertarTalla);
-
-        if ($conecCalzado) {
-            echo "<script>alert('Registro exitoso');</script>";
-        } else {
-            echo "<script>alert('Error al registrarse');</script>";
+                if (!$conecCalzado) {
+                    echo "<script>alert('Error al registrar la talla');</script>";
+                }
+            }
         }
+        echo "<script>alert('Registro exitoso de tallas');</script>";
+    } else {
+        echo "<script>alert('Debe seleccionar al menos una talla');</script>";
     }
 }
 ?>
@@ -178,32 +218,53 @@ if (isset($_POST["registrar-talla"])) {
 
     <!-- REGISTRO DEL COLOR -->
     <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
+    <select name="id_calzado" required>
+        <option value="">Selecciona un modelo</option>
+        <?php
+        // Mostrar opciones de modelo
+        while ($row = $resultadoCalzado->fetch_assoc()) {
+            echo "<option value='" . $row['id_calzado'] . "'>" . $row['modelo'] . "</option>";
+        }
+        ?>
+    </select>
+    <label>Colores disponibles:</label><br>
+    <?php
+    // Mostrar checkboxes para los colores
+    while ($row = $resultadoColor->fetch_assoc()) {
+        echo "<input type='checkbox' name='colores[]' value='" . $row['id_color'] . "'>" . $row['nombre_color'] . "<br>";
+    }
+    ?>
+    <button type="submit" name="registrar-color">Registrar</button>
+    <button type="reset">Reset</button>
+</form>
+
+<?php
+$resultadoCalzado->data_seek(0); // Reiniciar puntero de calzado
+$resultadoColor->data_seek(0); // Reiniciar puntero de colores
+?>
+<!-- Eliminación de colores -->
+<form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
         <select name="id_calzado" required>
             <option value="">Selecciona un modelo</option>
-            <?php
-            // Mostrar opciones de marca
-            while ($row = $resultadoCalzado->fetch_assoc()) {
-                echo "<option value='" . $row['id_calzado'] . "'>" . $row['modelo'] . "</option>";
-            }
-            ?>
+            <?php while ($row = $resultadoCalzado->fetch_assoc()) { ?>
+                <option value="<?php echo $row['id_calzado']; ?>"><?php echo $row['modelo']; ?></option>
+            <?php } ?>
         </select>
         <select name="id_color" required>
             <option value="">Selecciona un Color</option>
-            <?php
-            // Mostrar opciones de color
-            while ($row = $resultadoColor->fetch_assoc()) {
-                echo "<option value='" . $row['id_color'] . "'>" . $row['nombre_color'] . "</option>";
-            }
-            ?>
+            <?php while ($row = $resultadoColor->fetch_assoc()) { ?>
+                <option value="<?php echo $row['id_color']; ?>"><?php echo $row['nombre_color']; ?></option>
+            <?php } ?>
         </select>
 
-        <button type="submit" name="registrar-color">Registrar</button>
-        <button type="reset">Reset</button>
+        <button type="submit" name="eliminar-color">Eliminar</button>
     </form>
+    
 
-    <!-- REGISTRO DE TALLA -->
-    <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
-        <select name="id_calzado" required>
+
+     <!-- REGISTRO DE TALLA -->
+<form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
+<select name="id_calzado" required>
             <option value="">Selecciona un modelo</option>
             <?php
             // Mostrar opciones de marca
@@ -213,21 +274,38 @@ if (isset($_POST["registrar-talla"])) {
             }
             ?>
         </select>
+    <div>
+        <label>Selecciona las tallas:</label><br>
+        <?php
+        // Mostrar opciones de tallas como checkboxes
+        while ($row = $resultadoTalla->fetch_assoc()) {
+            echo "<input type='checkbox' name='tallas[]' value='" . $row['id_talla'] . "'>" . $row['talla'] . "<br>";
+        }
+        ?>
+    </div>
+
+    <button type="submit" name="registrar-talla">Registrar</button>
+    <button type="reset">Reset</button>
+</form> 
+
+ <!-- Eliminación de tallas -->
+ <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
+        <select name="id_calzado" required>
+            <option value="">Selecciona un modelo</option>
+            <?php while ($row = $resultadoCalzado->fetch_assoc()) { ?>
+                <option value="<?php echo $row['id_calzado']; ?>"><?php echo $row['modelo']; ?></option>
+            <?php } ?>
+        </select>
         <select name="id_talla" required>
-            <option value="">Selecciona una talla</option>
-            <?php
-            // Mostrar opciones de talla
-            $resultadoTalla->data_seek(0);
-            while ($row = $resultadoTalla->fetch_assoc()) {
-                echo "<option value='" . $row['id_talla'] . "'>" . $row['talla'] . "</option>";
-            }
-            ?>
+            <option value="">Selecciona una Talla</option>
+            <?php while ($row = $resultadoTalla->fetch_assoc()) { ?>
+                <option value="<?php echo $row['id_talla']; ?>"><?php echo $row['talla']; ?></option>
+            <?php } ?>
         </select>
 
-        <button type="submit" name="registrar-talla">Registrar</button>
-        <button type="reset">Reset</button>
+        <button type="submit" name="eliminar-talla">Eliminar</button>
     </form>
-
+    
     <!-- TABLA DONDE SE MUESTRAN LOS CALZADOS -->
     <table>
         <thead>

@@ -1,4 +1,5 @@
 <?php
+session_start();
 include("conexion.php");
 
 if (!empty($_POST)) {
@@ -12,7 +13,7 @@ if (!empty($_POST)) {
 
     if ($rows > 0) {
         $row = $resultado->fetch_assoc();
-        session_start();
+        
         $_SESSION['id_usuario'] = $row["id_usuario"];
         $_SESSION['id_rol'] = $row["id_rol"];
 

@@ -28,8 +28,6 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
     } else {
         echo "No se encontró el calzado con el ID proporcionado.";
     }
-} else {
-    echo "ID de calzado no proporcionado.";
 }
 
 session_start();
@@ -54,22 +52,12 @@ $sqlMarcas = "SELECT * FROM marca";
 $resultadoMarcas = $conexion->query($sqlMarcas);
 
 if (isset($_POST["actualizar"])) {
-    $modelo_actualizado = mysqli_real_escape_string($conexion, $_POST["modelo"]);
-    $tipo_actualizado = mysqli_real_escape_string($conexion, $_POST["tipo"]);
-    $material_actualizado = mysqli_real_escape_string($conexion, $_POST["material"]);
-    $marca_actualizado = mysqli_real_escape_string($conexion, $_POST["marca"]);
-    $precio_actualizado = mysqli_real_escape_string($conexion, $_POST["precio"]);
     $cantidad_actualizada = mysqli_real_escape_string($conexion, $_POST["cantidad"]);
 
-
-    // Obtener el ID del usuario que realizó la acción
-    
-
+    // Actualizar la cantidad del calzado
     $sqlActualizar = "UPDATE calzado 
-                    SET id_tipo = '$tipo_actualizado', id_material='$material_actualizado',
-                    id_marca='$marca_actualizado', precio = '$precio_actualizado', 
-                    cantidad = '$cantidad_actualizada'
-                    WHERE modelo = '$modelo_actualizado'";
+                    SET cantidad = '$cantidad_actualizada'
+                    WHERE id_calzado = $id_calzado";
     $resultadoActualizar = $conexion->query($sqlActualizar);
 
     if ($resultadoActualizar) {
@@ -79,14 +67,13 @@ if (isset($_POST["actualizar"])) {
                                       VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
         $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
 
-        echo "<script>alert('Datos actualizados correctamente');</script>";
-        
-        echo "<script>window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('Cantidad actualizada correctamente');</script>";
+        echo "<script>window.location.href='panel-empleado.php';</script>";
         exit();
     } else {
         echo "<script>alert('Error al actualizar los datos');</script>";
-        // Redirigir al panel de administrador después de mostrar el error
-        echo "<script>window.location.href='panel-admin.php';</script>";
+        
+        echo "<script>window.location.href='panel-empleado.php';</script>";
         exit(); //EVITA CICLO
     }
 
@@ -105,7 +92,7 @@ if (isset($_POST["agregar_colores"])) {
 
         if ($filas > 0) {
             echo "<script>alert('El color ya está asociado con el modelo');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>window.location.href='panel-empleado.php';</script>";
         } else {
             // Insertar el nuevo color para el modelo
             $sqlInsertarColor = "INSERT INTO calzado_color(id_calzado, id_color) 
@@ -118,11 +105,11 @@ if (isset($_POST["agregar_colores"])) {
                                               VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
                 $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
                 echo "<script>alert('Color agregado correctamente');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
+                echo "<script>window.location.href='panel-empleado.php';</script>";
                 exit();
             } else {
                 echo "<script>alert('Error al agregar el color');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
+                echo "<script>window.location.href='panel-empleado.php';</script>";
                 exit();
             }
         }
@@ -142,7 +129,7 @@ if (isset($_POST["agregar_tallas"])) {
 
         if ($filas > 0) {
             echo "<script>alert('La talla ya está asociada con el modelo');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>window.location.href='panel-empleado.php';</script>";
         } else {
             // Insertar la nueva talla para el modelo
             $sqlInsertarTalla = "INSERT INTO calzado_talla(id_calzado, id_talla) 
@@ -155,11 +142,11 @@ if (isset($_POST["agregar_tallas"])) {
                                               VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
                 $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
                 echo "<script>alert('Talla agregada correctamente');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
+                echo "<script>window.location.href='panel-empleado.php';</script>";
                 exit();
             } else {
                 echo "<script>alert('Error al agregar la talla');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
+                echo "<script>window.location.href='panel-empleado.php';</script>";
                 exit();
             }
         }
@@ -184,11 +171,11 @@ if (isset($_POST["eliminar_colores"])) {
                                               VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
                 $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
             echo "<script>alert('Color eliminado correctamente');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>window.location.href='panel-empleado.php';</script>";
             exit();
         } else {
             echo "<script>alert('Error al eliminar el color');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>window.location.href='panel-empleado.php';</script>";
             exit();
         }
     }
@@ -211,10 +198,11 @@ if (isset($_POST["eliminar_tallas"])) {
         $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
                                       VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
             echo "<script>alert('Talla eliminada correctamente');</script>";
+            echo "<script>window.location.href='panel-empleado.php';</script>";
             exit();
         } else {
             echo "<script>alert('Error al eliminar la talla');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>window.location.href='panel-empleado.php';</script>";
             exit();
         }
     }
@@ -290,7 +278,7 @@ if (isset($_POST["eliminar_tallas"])) {
                     </div>
 
                     <div class="form-group">
-                        <select name="tipo">
+                        <select name="tipo" disabled>
                             <?php while ($row = $resultadoTipos->fetch_assoc()): ?>
                                 <option value="<?php echo $row['id_tipo']; ?>" <?php if ($row['id_tipo'] == $tipo_id)
                                        echo 'selected'; ?>><?php echo $row['tipo_calzado']; ?></option>
@@ -299,7 +287,7 @@ if (isset($_POST["eliminar_tallas"])) {
                     </div>
 
                     <div class="form-group">
-                        <select name="material">
+                        <select name="material" disabled>
                             <?php while ($row = $resultadoMateriales->fetch_assoc()): ?>
                                 <option value="<?php echo $row['id_material']; ?>" <?php if ($row['id_material'] == $material_id)
                                        echo 'selected'; ?>><?php echo $row['material']; ?>
@@ -309,7 +297,7 @@ if (isset($_POST["eliminar_tallas"])) {
                     </div>
 
                     <div class="form-group">
-                        <select name="marca">
+                        <select name="marca" disabled>
                             <?php while ($row = $resultadoMarcas->fetch_assoc()): ?>
                                 <option value="<?php echo $row['id_marca']; ?>" <?php if ($row['id_marca'] == $marca_id)
                                        echo 'selected'; ?>><?php echo $row['marca']; ?></option>
@@ -318,7 +306,7 @@ if (isset($_POST["eliminar_tallas"])) {
                     </div>
 
                     <div class="form-group">
-                        <input type="text" name="precio" id="precio" value="<?php echo $precio; ?>">
+                        <input class="noeditar" type="text" name="precio" id="precio" value="<?php echo $precio; ?>" readonly>
                     </div>
 
                     <div class="form-group">

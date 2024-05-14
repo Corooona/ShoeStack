@@ -1,6 +1,25 @@
 <?php
 include ("conexion.php");
 
+// Variable para almacenar el término de búsqueda
+$termino_busqueda = "";
+
+// Verificar si se ha enviado un término de búsqueda
+if (isset($_GET['buscar'])) {
+    $termino_busqueda = $_GET['buscar'];
+}
+
+// Consulta SQL para obtener los calzados que coinciden con el término de búsqueda y tienen stock disponible
+$sqlBuscarCalzados = "SELECT c.id_calzado, c.modelo, t.tipo_calzado, m.material, ma.marca, c.precio, c.cantidad 
+                      FROM calzado c
+                      INNER JOIN tipo t ON c.id_tipo = t.id_tipo
+                      INNER JOIN material m ON c.id_material = m.id_material
+                      INNER JOIN marca ma ON c.id_marca = ma.id_marca
+                      WHERE c.modelo LIKE '%$termino_busqueda%' AND c.cantidad > 0";
+
+$resultadoBusqueda = $conexion->query($sqlBuscarCalzados);
+
+
 // Consulta para ver el calzado
 $calzado_query = "SELECT c.id_calzado, c.modelo, t.tipo_calzado, m.material, ma.marca, c.precio, c.cantidad 
                   FROM calzado c
@@ -16,19 +35,27 @@ $resultado = mysqli_query($conexion, $calzado_query);
 <html>
 
 <head>
-    <title>ShoeStock - Pantalla Principal del Empleado</title>
+    <title>ShoeStock - Pantalla Principal del Administrador</title>
     <link rel="stylesheet" href="styles/panel.css">
     <script src="https://kit.fontawesome.com/50ce43599f.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <?php include("header/header.php"); ?>
+    <?php include ("header/header.php"); ?>
     <div class="main-container">
         <!-- PARTE SUPERIOR -->
         <div class="superior">
             <a></a>
             <label class="titulo-principal">LISTA DE CALZADO</label>
-            <input type="text" placeholder="Buscar...">
+
+            <div class="buscar">
+                <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="GET">
+                    <input type="text" name="buscar" placeholder="Buscar...">
+                    <button type="submit"><i class="fa-sharp fa-solid fa-magnifying-glass"></i></button>
+                </form>
+            </div>
+
+
         </div>
 
         <!-- TABLA -->
@@ -49,11 +76,12 @@ $resultado = mysqli_query($conexion, $calzado_query);
             </thead>
             <tbody>
                 <?php
-                while ($row = mysqli_fetch_assoc($resultado)) {
+                while ($row = mysqli_fetch_assoc($resultadoBusqueda)) {
                     ?>
                     <tr class="table-primary">
                         <td>
-                            <a href="#"><i class="fa-solid fa-pen"></i></a>
+                            <a href="edit-cal-emp.php?id=<?php echo $row['id_calzado']; ?>"><i
+                                    class="fa-solid fa-pen"></i></a>
                         </td>
 
                         <td>
@@ -110,7 +138,7 @@ $resultado = mysqli_query($conexion, $calzado_query);
                     </tr>
                     <?php
                 }
-                mysqli_free_result($resultado);
+                mysqli_free_result($resultadoBusqueda);
                 ?>
             </tbody>
         </table>

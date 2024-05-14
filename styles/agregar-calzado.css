@@ -4,20 +4,6 @@ body {
     padding: 0;
 }
 
-
-.main-container {
-    padding: 20px;
-    
-}
-
-.superior{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-
 .titulo-principal {
     color: #fff;
     margin-top: 20px;
@@ -28,9 +14,16 @@ body {
     font-size: 25px;
     text-align: center;
     display: inline-block; 
-    width: 300px; 
+    width: 500px; 
 }
 
+.superior{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
 
 .container{
     display: flex;
@@ -38,6 +31,10 @@ body {
     justify-content: center;
 }
 
+.main-container {
+    padding: 20px;
+    
+}
 
 h2 {
     color: #0077b6;
@@ -58,6 +55,7 @@ input[type="text"],
 select {
     padding: 5px;
     width: 200px;
+
 }
 
 .edit-link {
@@ -88,35 +86,11 @@ select {
     color: #333;
 }
 
-.datos{
-    margin-left: 20px;
-    margin-right: 20px;
-
-    input[type="text"]{
-        
-        font-size: 18px;
-        background: none;
-        border: none;
-        color: #0077b6;
-    }
+.agregar{
+    margin-left: 10px;
 }
 
-.noeditar{
-        color: #0077b6;
-} 
-
-
-.botones{
-    display: flex;    
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    width: 200px;
-    height: 30px;
-}
-
-
-.actualizar{
+.registrar{
     background-color: #0077b6;
     color: #fff;
     border: none;
@@ -134,56 +108,4 @@ select {
     width: 90px;
     height: 30px;
     cursor: pointer;
-    margin-left: 10px;
-}
-
-.tyc{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-top: 40px;
-}
-
-
-.agregar{
-    display: flex;
-    justify-content: center;
-} 
-
-.colores{
-margin-right: 20px;
-
-}
-
-.btn-agregar{
-    margin-top: 10px;
-    background-color: #0077b6;
-    color: #fff;
-    border: none;
-    font-weight: bold;
-    width: 90px;
-    height: 35px;
-    cursor: pointer;
-
-}
-
-.tallas{
-    margin-left: 20px;
-}
-
-.eliminar{
-    display: flex;
-    justify-content: center;
-}
-
-.btn-eliminar{
-    margin-top: 10px;
-    color: white; 
-    background-color: red;
-    border: none;
-    font-weight: bold;
-    width: 90px;
-    height: 35px;
-    cursor: pointer;
-    
 }

@@ -41,7 +41,7 @@ $resultado = mysqli_query($conexion, $calzado_query);
 </head>
 
 <body>
-    <?php include("header/header.php"); ?>
+    <?php include ("header/header.php"); ?>
     <div class="main-container">
         <!-- PARTE SUPERIOR -->
         <div class="superior">
@@ -49,12 +49,12 @@ $resultado = mysqli_query($conexion, $calzado_query);
             <label class="titulo-principal">LISTA DE CALZADO</label>
 
             <div class="buscar">
-            <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="GET">
-                <input type="text" name="buscar" placeholder="Buscar...">
-                <button type="submit"><i class="fa-sharp fa-solid fa-magnifying-glass"></i></button>
-            </form>
+                <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="GET">
+                    <input type="text" name="buscar" placeholder="Buscar...">
+                    <button type="submit"><i class="fa-sharp fa-solid fa-magnifying-glass"></i></button>
+                </form>
             </div>
-            
+
 
         </div>
 
@@ -80,8 +80,10 @@ $resultado = mysqli_query($conexion, $calzado_query);
                     ?>
                     <tr class="table-primary">
                         <td>
-                            <a href="editar-calzado.php?id=<?php echo $row['id_calzado']; ?>"><i class="fa-solid fa-pen"></i></a>
-                            <a href="eliminar_calzado.php?id=<?php echo $row['id_calzado']; ?>"><i class="fa-solid fa-trash"></i></a>
+                            <a href="editar-calzado.php?id=<?php echo $row['id_calzado']; ?>"><i
+                                    class="fa-solid fa-pen"></i></a>
+                            <a href="eliminar_calzado.php?id=<?php echo $row['id_calzado']; ?>"><i
+                                    class="fa-solid fa-trash"></i></a>
                         </td>
 
                         <td>
