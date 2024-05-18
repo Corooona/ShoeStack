@@ -1,20 +1,7 @@
 <?php
 include ("conexion.php");
 
-// Obtener el ID del usuario que realizó la acción
-session_start();
-$id_usuario_accion = $_SESSION['id_usuario'];
-// Consulta para obtener el nombre de usuario a partir del id_usuario
-$sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = $id_usuario_accion";
-$resultado_nombre_usuario = mysqli_query($conexion, $sql_obtener_nombre_usuario);
 
-if ($resultado_nombre_usuario && mysqli_num_rows($resultado_nombre_usuario) > 0) {
-    $row_nombre_usuario = mysqli_fetch_assoc($resultado_nombre_usuario);
-    $nombre_usuario_accion = $row_nombre_usuario['nombre_user'];
-} else {
-    $nombre_usuario_accion = '';
-}
-session_abort();
 
 // Obtener roles disponibles desde la base de datos
 $sqlRoles = "SELECT * FROM roles";
@@ -42,14 +29,16 @@ if (isset($_POST["registrar"])) {
         $resultadousuario = $conexion->query($sqlusuario);
 
         if ($resultadousuario) {
-            $fecha_acceso = date("Y-m-d H:i:s");
-            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                  VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+        //     $fecha_acceso = date("Y-m-d H:i:s");
+        //     $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+        //                           VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
+        //     $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
             
-            session_unset();
+        session_unset(); // Eliminar todas las variables de sesión
+    session_destroy(); // Destruir la sesión actual
 
 echo "<script>alert('Registro exitoso');</script>";
+echo "<script>window.location.href='panel-admin.php';</script>";
         } else {
             echo "<script>alert('Error al registrarse');</script>";
         }

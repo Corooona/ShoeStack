@@ -46,7 +46,7 @@ $resultadoUsuarios = $conexion->query($sqlUsuarios);
                     <tr class="table-primary">
                         <td>
                             <a href="editar-usuario.php?id=<?php echo $row['id_usuario']; ?>"><i class="fa-solid fa-pen"></i></a>
-                            <a href="eliminar-usuario.php?id=<?php echo $row['id_usuario']; ?>"><i class="fa-solid fa-trash"></i></a>
+                            <a href="eliminar/eliminar_usuarios.php?id=<?php echo $row['id_usuario']; ?>" onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario?')"><i class="fa-solid fa-trash"></i></a>
                         </td>
 
                         <td><?php echo $row["id_usuario"]; ?></td>

@@ -7,6 +7,6 @@ if(mysqli_connect_errno()){
     echo "no conectado", mysqli_connect_errno();
     exit();
 }else{
-    echo"conectado";
+    // echo"conectado";
 }
 ?>

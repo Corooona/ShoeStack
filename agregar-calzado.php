@@ -14,6 +14,20 @@ $resultadoMarcas = $conexion->query($sqlMarcas);
 
 $id_calzado = isset($_GET['id']) ? $_GET['id'] : null; // Obtener el ID del calzado si está presente en la URL
 
+session_start();
+    $id_usuario_accion = $_SESSION['id_usuario'];
+    // Consulta para obtener el nombre de usuario a partir del id_usuario
+    $sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = $id_usuario_accion";
+    $resultado_nombre_usuario = mysqli_query($conexion, $sql_obtener_nombre_usuario);
+
+    if ($resultado_nombre_usuario && mysqli_num_rows($resultado_nombre_usuario) > 0) {
+        $row_nombre_usuario = mysqli_fetch_assoc($resultado_nombre_usuario);
+        $nombre_usuario_accion = $row_nombre_usuario['nombre_user'];
+    } else {
+        $nombre_usuario_accion = '';
+    }
+    session_abort();
+
 if (isset($_POST["registrar"])) {
     $modelo = mysqli_real_escape_string($conexion, $_POST["modelo"]);
     $tipo = mysqli_real_escape_string($conexion, $_POST["tipo"]);
@@ -35,6 +49,12 @@ if (isset($_POST["registrar"])) {
         $conecCalzado = $conexion->query($sqlInsertarModelo);
 
         if ($conecCalzado) {
+            // Insertar el registro en la tabla registro_acceso
+        $fecha_acceso = date("Y-m-d H:i:s");
+        $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                      VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
+        $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+
             echo "<script>alert('Registro exitoso');</script>";
             echo "<script>window.location.href='panel-admin.php';</script>";
         } else {

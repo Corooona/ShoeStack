@@ -82,7 +82,7 @@ $resultado = mysqli_query($conexion, $calzado_query);
                         <td>
                             <a href="editar-calzado.php?id=<?php echo $row['id_calzado']; ?>"><i
                                     class="fa-solid fa-pen"></i></a>
-                            <a href="eliminar_calzado.php?id=<?php echo $row['id_calzado']; ?>"><i
+                            <a href="eliminar/eliminar_calzado.php?id=<?php echo $row['id_calzado']; ?>" onclick="return confirm('¿Estás seguro de que quieres eliminar este calzado?')"><i
                                     class="fa-solid fa-trash"></i></a>
                         </td>
 

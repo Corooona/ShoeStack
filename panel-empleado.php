@@ -80,8 +80,8 @@ $resultado = mysqli_query($conexion, $calzado_query);
                     ?>
                     <tr class="table-primary">
                         <td>
-                            <a href="edit-cal-emp.php?id=<?php echo $row['id_calzado']; ?>"><i
-                                    class="fa-solid fa-pen"></i></a>
+                        <a href="edit-cal-emp.php?id=<?php echo $row['id_calzado']; ?>"><i class="fa-solid fa-pen"></i></a>
+                        
                         </td>
 
                         <td>

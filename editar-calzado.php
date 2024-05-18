@@ -96,36 +96,45 @@ if (isset($_POST["actualizar"])) {
 if (isset($_POST["agregar_colores"])) {
     $modelo_agregar_colores = mysqli_real_escape_string($conexion, $_POST["modelo_agregar_colores"]);
     $colores_seleccionados = isset($_POST["colores_seleccionados"]) ? $_POST["colores_seleccionados"] : array();
+    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_colores'"))['id_calzado'];
+
+    // Crear una consulta SQL para insertar varios colores a la vez
+    $sqlInsertarColores = "INSERT INTO calzado_color (id_calzado, id_color) VALUES ";
+    $valores = array();
 
     foreach ($colores_seleccionados as $color) {
-        // Verificar si el par (modelo, color) ya existe en la tabla calzado_color
-        $queryCalzadoColor = "SELECT id_cal_color FROM calzado_color WHERE id_calzado = (SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_colores') AND id_color = '$color'";
-        $conecQueryCalzadoColor = $conexion->query($queryCalzadoColor);
-        $filas = $conecQueryCalzadoColor->num_rows;
+        // Verificar si el color ya está asociado al modelo
+        $queryColoresAsociados = "SELECT id_cal_color FROM calzado_color WHERE id_calzado = $id_calzado AND id_color = $color";
+        $resultadoColoresAsociados = $conexion->query($queryColoresAsociados);
 
-        if ($filas > 0) {
-            echo "<script>alert('El color ya está asociado con el modelo');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
-        } else {
-            // Insertar el nuevo color para el modelo
-            $sqlInsertarColor = "INSERT INTO calzado_color(id_calzado, id_color) 
-                                 VALUES((SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_colores'), '$color')";
-            $conecCalzado = $conexion->query($sqlInsertarColor);
-
-            if ($conecCalzado) {
-                $fecha_acceso = date("Y-m-d H:i:s");
-                $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                              VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-                $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-                echo "<script>alert('Color agregado correctamente');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
-                exit();
-            } else {
-                echo "<script>alert('Error al agregar el color');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
-                exit();
-            }
+        if ($resultadoColoresAsociados->num_rows == 0) {
+            $valores[] = "($id_calzado, '$color')";
         }
+    }
+
+    $sqlInsertarColores .= implode(",", $valores);
+
+    // Ejecutar la consulta solo si se seleccionaron colores nuevos
+    if (!empty($valores)) {
+        $conecCalzado = $conexion->query($sqlInsertarColores);
+
+        if ($conecCalzado) {
+            $fecha_acceso = date("Y-m-d H:i:s");
+            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
+            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+            echo "<script>alert('Colores agregados correctamente');</script>";
+            echo "<script>window.location.href='panel-admin.php';</script>";
+            exit();
+        } else {
+            echo "<script>alert('Error al agregar los colores');</script>";
+            echo "<script>window.location.href='panel-admin.php';</script>";
+            exit();
+        }
+    } else {
+        echo "<script>alert('Los colores seleccionados ya están asociados al modelo');</script>";
+        echo "<script>window.location.href='panel-admin.php';</script>";
+        exit();
     }
 }
 
@@ -133,64 +142,92 @@ if (isset($_POST["agregar_colores"])) {
 if (isset($_POST["agregar_tallas"])) {
     $modelo_agregar_tallas = mysqli_real_escape_string($conexion, $_POST["modelo_agregar_tallas"]);
     $tallas_seleccionadas = isset($_POST["tallas_seleccionadas"]) ? $_POST["tallas_seleccionadas"] : array();
+    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_tallas'"))['id_calzado'];
+
+    // Crear una consulta SQL para insertar varias tallas a la vez
+    $sqlInsertarTallas = "INSERT INTO calzado_talla (id_calzado, id_talla) VALUES ";
+    $valores = array();
 
     foreach ($tallas_seleccionadas as $talla) {
-        // Verificar si el par (modelo, talla) ya existe en la tabla calzado_talla
-        $queryCalzadoTalla = "SELECT id_cal_talla FROM calzado_talla WHERE id_calzado = (SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_tallas') AND id_talla = '$talla'";
-        $conecQueryCalzadoTalla = $conexion->query($queryCalzadoTalla);
-        $filas = $conecQueryCalzadoTalla->num_rows;
+        // Verificar si la talla ya está asociada al modelo
+        $queryTallasAsociadas = "SELECT id_cal_talla FROM calzado_talla WHERE id_calzado = $id_calzado AND id_talla = $talla";
+        $resultadoTallasAsociadas = $conexion->query($queryTallasAsociadas);
 
-        if ($filas > 0) {
-            echo "<script>alert('La talla ya está asociada con el modelo');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
-        } else {
-            // Insertar la nueva talla para el modelo
-            $sqlInsertarTalla = "INSERT INTO calzado_talla(id_calzado, id_talla) 
-                                 VALUES((SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_tallas'), '$talla')";
-            $conecCalzado = $conexion->query($sqlInsertarTalla);
-
-            if ($conecCalzado) {
-                $fecha_acceso = date("Y-m-d H:i:s");
-                $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                              VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-                $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-                echo "<script>alert('Talla agregada correctamente');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
-                exit();
-            } else {
-                echo "<script>alert('Error al agregar la talla');</script>";
-                echo "<script>window.location.href='panel-admin.php';</script>";
-                exit();
-            }
+        if ($resultadoTallasAsociadas->num_rows == 0) {
+            $valores[] = "($id_calzado, '$talla')";
         }
     }
+
+    $sqlInsertarTallas .= implode(",", $valores);
+
+    // Ejecutar la consulta solo si se seleccionaron tallas nuevas
+    if (!empty($valores)) {
+        $conecCalzado = $conexion->query($sqlInsertarTallas);
+
+        if ($conecCalzado) {
+            $fecha_acceso = date("Y-m-d H:i:s");
+            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
+            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+            echo "<script>alert('Tallas agregadas correctamente');</script>";
+            echo "<script>window.location.href='panel-admin.php';</script>";
+            exit();
+        } else {
+            echo "<script>alert('Error al agregar las tallas');</script>";
+            echo "<script>window.location.href='panel-admin.php';</script>";
+            exit();
+        }
+    } else {
+        echo "<script>alert('Las tallas seleccionadas ya están asociadas al modelo');</script>";
+        echo "<script>window.location.href='panel-admin.php';</script>";
+        exit();
+    }
 }
+
 
 // Eliminar colores del calzado seleccionado
 if (isset($_POST["eliminar_colores"])) {
     $modelo_eliminar_colores = mysqli_real_escape_string($conexion, $_POST["modelo_eliminar_colores"]);
     $colores_seleccionados = isset($_POST["colores_seleccionados"]) ? $_POST["colores_seleccionados"] : array();
+    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_eliminar_colores'"))['id_calzado'];
 
-    foreach ($colores_seleccionados as $color) {
-        // Eliminar el color del modelo
-        $sqlEliminarColor = "DELETE FROM calzado_color 
-                             WHERE id_calzado = (SELECT id_calzado FROM calzado WHERE modelo = '$modelo_eliminar_colores') 
-                             AND id_color = '$color'";
-        $conecEliminarColor = $conexion->query($sqlEliminarColor);
+    // Verificar si los colores seleccionados están asociados al modelo
+    $coloresAsociadosQuery = "SELECT id_color
+                              FROM calzado_color
+                              WHERE id_calzado = $id_calzado
+                              AND id_color IN (" . implode(",", $colores_seleccionados) . ")";
+    $coloresAsociadosResult = $conexion->query($coloresAsociadosQuery);
+    $coloresAsociados = array();
+    while ($row = $coloresAsociadosResult->fetch_assoc()) {
+        $coloresAsociados[] = $row['id_color'];
+    }
+
+    // Crear una consulta SQL para eliminar varios colores a la vez
+    $sqlEliminarColores = "DELETE FROM calzado_color
+                           WHERE id_calzado = $id_calzado
+                           AND id_color IN (" . implode(",", $coloresAsociados) . ")";
+
+    // Ejecutar la consulta solo si se seleccionaron colores asociados
+    if (!empty($coloresAsociados)) {
+        $conecEliminarColor = $conexion->query($sqlEliminarColores);
 
         if ($conecEliminarColor) {
             $fecha_acceso = date("Y-m-d H:i:s");
-                $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                              VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-                $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-            echo "<script>alert('Color eliminado correctamente');</script>";
+            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
+            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+            echo "<script>alert('Colores eliminados correctamente');</script>";
             echo "<script>window.location.href='panel-admin.php';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al eliminar el color');</script>";
+            echo "<script>alert('Error al eliminar los colores');</script>";
             echo "<script>window.location.href='panel-admin.php';</script>";
             exit();
         }
+    } else {
+        echo "<script>alert('Los colores seleccionados no están asociados al modelo');</script>";
+        echo "<script>window.location.href='panel-admin.php';</script>";
+        exit();
     }
 }
 
@@ -198,27 +235,48 @@ if (isset($_POST["eliminar_colores"])) {
 if (isset($_POST["eliminar_tallas"])) {
     $modelo_eliminar_tallas = mysqli_real_escape_string($conexion, $_POST["modelo_eliminar_tallas"]);
     $tallas_seleccionadas = isset($_POST["tallas_seleccionadas"]) ? $_POST["tallas_seleccionadas"] : array();
+    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_eliminar_tallas'"))['id_calzado'];
 
-    foreach ($tallas_seleccionadas as $talla) {
-        // Eliminar la talla del modelo
-        $sqlEliminarTalla = "DELETE FROM calzado_talla
-                             WHERE id_calzado = (SELECT id_calzado FROM calzado WHERE modelo = '$modelo_eliminar_tallas')
-                             AND id_talla = '$talla'";
-        $conecEliminarTalla = $conexion->query($sqlEliminarTalla);
+    // Verificar si las tallas seleccionadas están asociadas al modelo
+    $tallasAsociadasQuery = "SELECT id_talla 
+                             FROM calzado_talla
+                             WHERE id_calzado = $id_calzado
+                             AND id_talla IN (" . implode(",", $tallas_seleccionadas) . ")";
+    $tallasAsociadasResult = $conexion->query($tallasAsociadasQuery);
+    $tallasAsociadas = array();
+    while ($row = $tallasAsociadasResult->fetch_assoc()) {
+        $tallasAsociadas[] = $row['id_talla'];
+    }
+
+    // Crear una consulta SQL para eliminar varias tallas a la vez
+    $sqlEliminarTallas = "DELETE FROM calzado_talla
+                          WHERE id_calzado = $id_calzado
+                          AND id_talla IN (" . implode(",", $tallasAsociadas) . ")";
+
+    // Ejecutar la consulta solo si se seleccionaron tallas asociadas
+    if (!empty($tallasAsociadas)) {
+        $conecEliminarTalla = $conexion->query($sqlEliminarTallas);
 
         if ($conecEliminarTalla) {
             $fecha_acceso = date("Y-m-d H:i:s");
-        $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                      VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-            echo "<script>alert('Talla eliminada correctamente');</script>";
+            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
+            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+            echo "<script>alert('Tallas eliminadas correctamente');</script>";
+            echo "<script>window.location.href='panel-admin.php';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al eliminar la talla');</script>";
+            echo "<script>alert('Error al eliminar las tallas');</script>";
             echo "<script>window.location.href='panel-admin.php';</script>";
             exit();
         }
+    } else {
+        echo "<script>alert('Las tallas seleccionadas no están asociadas al modelo');</script>";
+        echo "<script>window.location.href='panel-admin.php';</script>";
+        exit();
     }
 }
+
 
 ?>
 
