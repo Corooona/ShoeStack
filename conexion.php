@@ -1,19 +1,16 @@
-<!-- archivo 2 -->
-<?php
-
+<!-- Archivo Mejorado - 1 -->
 <?php
 $server="localhost";
 $user="root";
 $pass="";
 $db="shoestock";
-?>
 
-$conexion=mysqli_connect($server,$user,$pass,$db);
-
-if(mysqli_connect_errno()){
-    echo "no conectado", mysqli_connect_errno();
-    exit();
-}else{
-    // echo"conectado";
+try{
+    $conexion= new PDO("mysql:host=$server;dbname:$db",$user,$root);
+    $conexion->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
+    $conexion->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    $conexion->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC); 
+}catch(PDOException $err){
+    die("Error de conexión: " . $err->getMessage());
 }
 ?>
