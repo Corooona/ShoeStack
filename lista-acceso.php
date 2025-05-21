@@ -1,15 +1,21 @@
 <?php
 include("conexion.php");
 
-// Consulta SQL para obtener los registros de acceso
+// Consulta SQL para obtener los registros de acceso usando PDO
 $sqlRegistrosAcceso = "SELECT id_registro, id_usuario, nombre_usuario, fecha FROM registro_acceso";
-$resultadoRegistrosAcceso = $conexion->query($sqlRegistrosAcceso);
+$stmtRegistrosAcceso = $conexion->prepare($sqlRegistrosAcceso);
+$stmtRegistrosAcceso->execute();
+
+// Obtener todos los registros
+$resultadoRegistrosAcceso = $stmtRegistrosAcceso->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShoeStock - Lista de Acceso</title>
     <link rel="stylesheet" href="styles/lista-acceso.css">
     <script src="https://kit.fontawesome.com/50ce43599f.js" crossorigin="anonymous"></script>
@@ -25,31 +31,31 @@ $resultadoRegistrosAcceso = $conexion->query($sqlRegistrosAcceso);
 
         <div class="datos">
             <!-- TABLA -->
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>ID Usuario</th>
-                    <th>Nombre Usuario</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                while ($row = mysqli_fetch_assoc($resultadoRegistrosAcceso)) {
-                ?>
-                    <tr class="table-primary">
-                        <td><?php echo $row["id_registro"]; ?></td>
-                        <td><?php echo $row["id_usuario"]; ?></td>
-                        <td><?php echo $row["nombre_usuario"]; ?></td>
-                        <td><?php echo $row["fecha"]; ?></td>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ID Usuario</th>
+                        <th>Nombre Usuario</th>
+                        <th>Fecha</th>
                     </tr>
-                <?php
-                }
-                mysqli_free_result($resultadoRegistrosAcceso);
-                ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php
+                    // Mostrar los registros de acceso
+                    foreach ($resultadoRegistrosAcceso as $row) {
+                    ?>
+                        <tr class="table-primary">
+                            <td><?php echo htmlspecialchars($row["id_registro"]); ?></td>
+                            <td><?php echo htmlspecialchars($row["id_usuario"]); ?></td>
+                            <td><?php echo htmlspecialchars($row["nombre_usuario"]); ?></td>
+                            <td><?php echo htmlspecialchars($row["fecha"]); ?></td>
+                        </tr>
+                    <?php
+                    }
+                    ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </body>

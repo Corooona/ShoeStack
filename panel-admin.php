@@ -1,13 +1,10 @@
+<!-- Archivo mejorado 3 -->
 <?php
 include ("conexion.php");
 
-// Variable para almacenar el término de búsqueda
-$termino_busqueda = "";
+// Variable para almacenar el término de búsqueda 
+$termino_busqueda = isset($_GET['buscar']) ? $_GET['buscar'] : "";
 
-// Verificar si se ha enviado un término de búsqueda
-if (isset($_GET['buscar'])) {
-    $termino_busqueda = $_GET['buscar'];
-}
 
 // Consulta SQL para obtener los calzados que coinciden con el término de búsqueda y tienen stock disponible
 $sqlBuscarCalzados = "SELECT c.id_calzado, c.modelo, t.tipo_calzado, m.material, ma.marca, c.precio, c.cantidad 
@@ -15,19 +12,11 @@ $sqlBuscarCalzados = "SELECT c.id_calzado, c.modelo, t.tipo_calzado, m.material,
                       INNER JOIN tipo t ON c.id_tipo = t.id_tipo
                       INNER JOIN material m ON c.id_material = m.id_material
                       INNER JOIN marca ma ON c.id_marca = ma.id_marca
-                      WHERE c.modelo LIKE '%$termino_busqueda%' AND c.cantidad > 0";
-
-$resultadoBusqueda = $conexion->query($sqlBuscarCalzados);
-
-
-// Consulta para ver el calzado
-$calzado_query = "SELECT c.id_calzado, c.modelo, t.tipo_calzado, m.material, ma.marca, c.precio, c.cantidad 
-                  FROM calzado c
-                  INNER JOIN tipo t ON c.id_tipo = t.id_tipo
-                  INNER JOIN material m ON c.id_material = m.id_material
-                  INNER JOIN marca ma ON c.id_marca = ma.id_marca";
-
-$resultado = mysqli_query($conexion, $calzado_query);
+                      WHERE c.modelo LIKE :termino_busqueda AND c.cantidad > 0";
+$stmt=$conexion->prepare($sqlBuscarCalzados);
+$stmt->bindValue(":termino_busqueda", "%" . $termino_busqueda . "%" );
+$stmt->execute();
+$resultadoBusqueda = $stmt->fetchAll();
 
 ?>
 
@@ -76,7 +65,25 @@ $resultado = mysqli_query($conexion, $calzado_query);
             </thead>
             <tbody>
                 <?php
-                while ($row = mysqli_fetch_assoc($resultadoBusqueda)) {
+                    foreach($resultadoBusqueda as $row){
+                        //Cinsultas optimizadas para obtener talla y color en una sola consulta
+                        $talla_query="SELECT GROUP_CONCAT(talla) as tallas FROM talla t
+                        INNER JOIN calzado_talla ct ON t.id_talla =ct.id_talla
+                        WHERE ct.id_calzado=:id_calzado";
+
+                        $stmt_talla=$conexion->prepare($talla_query);
+                        $stmt_talla->execute([':id_calzado'=>$row['id_calzado']]);
+                        $talla_row=$stmt_talla->fetch();
+                        
+                        $color_query="SELECT GROUP_CONCAT(c.nombre_color) AS colores FROM color c
+                        INNER JOIN calzado_color cc ON c.id_color=cc.id_color
+                        WHERE cc.id_calzado=:id_calzado";
+
+                        $stmt_color=$conexion->prepare($color_query);
+                        $stmt_color->execute([":id_calzado"=>$row['id_calzado']]);
+                        $color_row=$stmt_color->fetch();
+
+                    
                     ?>
                     <tr class="table-primary">
                         <td>
@@ -99,27 +106,11 @@ $resultado = mysqli_query($conexion, $calzado_query);
                         </td>
 
                         <td>
-                            <?php
-                            $talla_query = "SELECT talla FROM talla t
-                                            INNER JOIN calzado_talla ct ON t.id_talla = ct.id_talla
-                                            WHERE ct.id_calzado = " . $row["id_calzado"];
-                            $talla_resultado = mysqli_query($conexion, $talla_query);
-                            while ($talla_row = mysqli_fetch_assoc($talla_resultado)) {
-                                echo $talla_row["talla"] . ", ";
-                            }
-                            ?>
+                            <?php echo $talla_row["tallas"] . ", ";?>
                         </td>
 
                         <td>
-                            <?php
-                            $color_query = "SELECT c.nombre_color FROM color c
-                                            INNER JOIN calzado_color cc ON c.id_color = cc.id_color
-                                            WHERE cc.id_calzado = " . $row["id_calzado"];
-                            $color_resultado = mysqli_query($conexion, $color_query);
-                            while ($color_row = mysqli_fetch_assoc($color_resultado)) {
-                                echo $color_row["nombre_color"] . ", ";
-                            }
-                            ?>
+                            <?php echo $color_row["colores"] . ", ";?>
                         </td>
 
                         <td>
@@ -130,7 +121,7 @@ $resultado = mysqli_query($conexion, $calzado_query);
                             <?php echo $row["marca"] ?>
                         </td>
 
-                        <td>
+                        <td>    
                             <?php echo $row["precio"] ?>
                         </td>
 
@@ -140,7 +131,6 @@ $resultado = mysqli_query($conexion, $calzado_query);
                     </tr>
                     <?php
                 }
-                mysqli_free_result($resultadoBusqueda);
                 ?>
             </tbody>
         </table>

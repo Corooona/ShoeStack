@@ -1,28 +1,45 @@
 <?php
-include ("conexion.php");
+include("conexion.php");
+
+// Función para obtener el nombre de cualquier entidad (tipo, material, marca, color, talla)
+function obtenerNombreEntidad($conexion, $tabla, $id) {
+    $sql = "SELECT * FROM $tabla WHERE id_$tabla = :id";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Manejar los diferentes nombres de columnas según la tabla
+    switch($tabla) {
+        case 'tipo': return $row['tipo_calzado'] ?? '';
+        case 'material': return $row['material'] ?? '';
+        case 'marca': return $row['marca'] ?? '';
+        case 'color': return $row['nombre_color'] ?? '';
+        case 'talla': return $row['talla'] ?? '';
+        default: return '';
+    }
+}
 
 if (isset($_GET['id']) && !empty($_GET['id'])) {
     $id_calzado = $_GET['id'];
 
-    $sqlTipoCalzado = "SELECT tipo_calzado FROM tipo WHERE id_tipo = (SELECT id_tipo FROM calzado WHERE id_calzado = $id_calzado)";
-    $sqlMaterial = "SELECT material FROM material WHERE id_material = (SELECT id_material FROM calzado WHERE id_calzado = $id_calzado)";
-    $sqlMarca = "SELECT marca FROM marca WHERE id_marca = (SELECT id_marca FROM calzado WHERE id_calzado = $id_calzado)";
+    // Consulta para obtener la información del calzado utilizando PDO
+    $consulta = "SELECT * FROM calzado WHERE id_calzado = :id_calzado";
+    $stmt = $conexion->prepare($consulta);
+    $stmt->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+    $stmt->execute();
 
-    $consulta = "SELECT * FROM calzado WHERE id_calzado = $id_calzado";
-    $resultado = mysqli_query($conexion, $consulta);
-
-    if (mysqli_num_rows($resultado) > 0) {
-        $row = mysqli_fetch_assoc($resultado);
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $modelo = $row['modelo'];
-        // Obtener tipo, material y marca del calzado
         $tipo_id = $row['id_tipo'];
         $material_id = $row['id_material'];
         $marca_id = $row['id_marca'];
-
-        // Obtener el nombre del tipo, material y marca
-        $tipo = mysqli_fetch_assoc(mysqli_query($conexion, $sqlTipoCalzado))['tipo_calzado'];
-        $material = mysqli_fetch_assoc(mysqli_query($conexion, $sqlMaterial))['material'];
-        $marca = mysqli_fetch_assoc(mysqli_query($conexion, $sqlMarca))['marca'];
+        
+        // Obtener nombres usando la nueva función
+        $tipo = obtenerNombreEntidad($conexion, 'tipo', $tipo_id);
+        $material = obtenerNombreEntidad($conexion, 'material', $material_id);
+        $marca = obtenerNombreEntidad($conexion, 'marca', $marca_id);
         $precio = $row['precio'];
         $cantidad = $row['cantidad'];
     } else {
@@ -33,250 +50,231 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
 }
 
 session_start();
-    $id_usuario_accion = $_SESSION['id_usuario'];
-    // Consulta para obtener el nombre de usuario a partir del id_usuario
-    $sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = $id_usuario_accion";
-    $resultado_nombre_usuario = mysqli_query($conexion, $sql_obtener_nombre_usuario);
+$id_usuario_accion = $_SESSION['id_usuario'] ?? null;
+$nombre_usuario_accion = '';
 
-    if ($resultado_nombre_usuario && mysqli_num_rows($resultado_nombre_usuario) > 0) {
-        $row_nombre_usuario = mysqli_fetch_assoc($resultado_nombre_usuario);
+if ($id_usuario_accion) {
+    $sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = :id_usuario";
+    $stmt_nombre_usuario = $conexion->prepare($sql_obtener_nombre_usuario);
+    $stmt_nombre_usuario->bindParam(':id_usuario', $id_usuario_accion, PDO::PARAM_INT);
+    $stmt_nombre_usuario->execute();
+
+    if ($stmt_nombre_usuario->rowCount() > 0) {
+        $row_nombre_usuario = $stmt_nombre_usuario->fetch(PDO::FETCH_ASSOC);
         $nombre_usuario_accion = $row_nombre_usuario['nombre_user'];
-    } else {
-        $nombre_usuario_accion = '';
     }
-    session_abort();
+}
 
+// Preparar consultas para los select
 $sqlTipos = "SELECT * FROM tipo";
-$resultadoTipos = $conexion->query($sqlTipos);
+$stmtTipos = $conexion->prepare($sqlTipos);
+$stmtTipos->execute();
+
 $sqlMateriales = "SELECT * FROM material";
-$resultadoMateriales = $conexion->query($sqlMateriales);
+$stmtMateriales = $conexion->prepare($sqlMateriales);
+$stmtMateriales->execute();
+
 $sqlMarcas = "SELECT * FROM marca";
-$resultadoMarcas = $conexion->query($sqlMarcas);
+$stmtMarcas = $conexion->prepare($sqlMarcas);
+$stmtMarcas->execute();
 
+// Función para registrar acceso
+function registrarAcceso($conexion, $id_usuario, $nombre_usuario) {
+    $fecha_acceso = date("Y-m-d H:i:s");
+    $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                VALUES (:id_usuario, :nombre_usuario, :fecha_acceso)";
+    $stmt = $conexion->prepare($sqlInsertarRegistroAcceso);
+    $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+    $stmt->bindParam(':nombre_usuario', $nombre_usuario, PDO::PARAM_STR);
+    $stmt->bindParam(':fecha_acceso', $fecha_acceso, PDO::PARAM_STR);
+    return $stmt->execute();
+}
+
+// Actualizar información básica del calzado
 if (isset($_POST["actualizar"])) {
-    $modelo_actualizado = mysqli_real_escape_string($conexion, $_POST["modelo"]);
-    $tipo_actualizado = mysqli_real_escape_string($conexion, $_POST["tipo"]);
-    $material_actualizado = mysqli_real_escape_string($conexion, $_POST["material"]);
-    $marca_actualizado = mysqli_real_escape_string($conexion, $_POST["marca"]);
-    $precio_actualizado = mysqli_real_escape_string($conexion, $_POST["precio"]);
-    $cantidad_actualizada = mysqli_real_escape_string($conexion, $_POST["cantidad"]);
-
-
-    // Obtener el ID del usuario que realizó la acción
-    
+    $id_calzado = $_GET['id'];
+    $modelo_actualizado = htmlspecialchars($_POST["modelo"]);
+    $tipo_actualizado = $_POST["tipo"];
+    $material_actualizado = $_POST["material"];
+    $marca_actualizado = $_POST["marca"];
+    $precio_actualizado = $_POST["precio"];
+    $cantidad_actualizada = $_POST["cantidad"];
 
     $sqlActualizar = "UPDATE calzado 
-                    SET id_tipo = '$tipo_actualizado', id_material='$material_actualizado',
-                    id_marca='$marca_actualizado', precio = '$precio_actualizado', 
-                    cantidad = '$cantidad_actualizada'
-                    WHERE modelo = '$modelo_actualizado'";
-    $resultadoActualizar = $conexion->query($sqlActualizar);
-
-    if ($resultadoActualizar) {
-        // Insertar el registro en la tabla registro_acceso
-        $fecha_acceso = date("Y-m-d H:i:s");
-        $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                      VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-        $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-
-        echo "<script>alert('Datos actualizados correctamente');</script>";
-        
-        echo "<script>window.location.href='panel-admin.php';</script>";
+                    SET id_tipo = :tipo, id_material = :material, id_marca = :marca, 
+                        precio = :precio, cantidad = :cantidad
+                    WHERE id_calzado = :id_calzado";
+    $stmtActualizar = $conexion->prepare($sqlActualizar);
+    $stmtActualizar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+    $stmtActualizar->bindParam(':tipo', $tipo_actualizado, PDO::PARAM_INT);
+    $stmtActualizar->bindParam(':material', $material_actualizado, PDO::PARAM_INT);
+    $stmtActualizar->bindParam(':marca', $marca_actualizado, PDO::PARAM_INT);
+    $stmtActualizar->bindParam(':precio', $precio_actualizado, PDO::PARAM_STR);
+    $stmtActualizar->bindParam(':cantidad', $cantidad_actualizada, PDO::PARAM_INT);
+    
+    if ($stmtActualizar->execute()) {
+        registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
+        echo "<script>alert('Datos actualizados correctamente'); window.location.href='panel-admin.php';</script>";
         exit();
     } else {
-        echo "<script>alert('Error al actualizar los datos');</script>";
-        // Redirigir al panel de administrador después de mostrar el error
-        echo "<script>window.location.href='panel-admin.php';</script>";
-        exit(); //EVITA CICLO
+        echo "<script>alert('Error al actualizar los datos'); window.location.href='panel-admin.php';</script>";
+        exit();
     }
-
 }
 
-// Agregar colores al calzado seleccionado
+// Agregar colores al calzado
 if (isset($_POST["agregar_colores"])) {
-    $modelo_agregar_colores = mysqli_real_escape_string($conexion, $_POST["modelo_agregar_colores"]);
-    $colores_seleccionados = isset($_POST["colores_seleccionados"]) ? $_POST["colores_seleccionados"] : array();
-    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_colores'"))['id_calzado'];
-
-    // Crear una consulta SQL para insertar varios colores a la vez
-    $sqlInsertarColores = "INSERT INTO calzado_color (id_calzado, id_color) VALUES ";
-    $valores = array();
-
+    $colores_seleccionados = $_POST["colores_seleccionados"] ?? [];
+    $valores = [];
+    
     foreach ($colores_seleccionados as $color) {
-        // Verificar si el color ya está asociado al modelo
-        $queryColoresAsociados = "SELECT id_cal_color FROM calzado_color WHERE id_calzado = $id_calzado AND id_color = $color";
-        $resultadoColoresAsociados = $conexion->query($queryColoresAsociados);
-
-        if ($resultadoColoresAsociados->num_rows == 0) {
-            $valores[] = "($id_calzado, '$color')";
+        // Verificar si el color ya está asociado
+        $sqlVerificar = "SELECT id_cal_color FROM calzado_color 
+                         WHERE id_calzado = :id_calzado AND id_color = :id_color";
+        $stmtVerificar = $conexion->prepare($sqlVerificar);
+        $stmtVerificar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+        $stmtVerificar->bindParam(':id_color', $color, PDO::PARAM_INT);
+        $stmtVerificar->execute();
+        
+        if ($stmtVerificar->rowCount() == 0) {
+            $valores[] = "(:id_calzado, $color)";
         }
     }
-
-    $sqlInsertarColores .= implode(",", $valores);
-
-    // Ejecutar la consulta solo si se seleccionaron colores nuevos
+    
     if (!empty($valores)) {
-        $conecCalzado = $conexion->query($sqlInsertarColores);
-
-        if ($conecCalzado) {
-            $fecha_acceso = date("Y-m-d H:i:s");
-            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-            echo "<script>alert('Colores agregados correctamente');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+        $sqlInsertar = "INSERT INTO calzado_color (id_calzado, id_color) VALUES " . implode(",", $valores);
+        $stmtInsertar = $conexion->prepare($sqlInsertar);
+        $stmtInsertar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+        
+        if ($stmtInsertar->execute()) {
+            registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
+            echo "<script>alert('Colores agregados correctamente'); window.location.href='panel-admin.php';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al agregar los colores');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Error al agregar colores'); window.location.href='panel-admin.php';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('Los colores seleccionados ya están asociados al modelo');</script>";
-        echo "<script>window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('Los colores seleccionados ya están asociados al modelo'); window.location.href='panel-admin.php';</script>";
         exit();
     }
 }
 
-// Agregar tallas al calzado seleccionado
-if (isset($_POST["agregar_tallas"])) {
-    $modelo_agregar_tallas = mysqli_real_escape_string($conexion, $_POST["modelo_agregar_tallas"]);
-    $tallas_seleccionadas = isset($_POST["tallas_seleccionadas"]) ? $_POST["tallas_seleccionadas"] : array();
-    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_agregar_tallas'"))['id_calzado'];
-
-    // Crear una consulta SQL para insertar varias tallas a la vez
-    $sqlInsertarTallas = "INSERT INTO calzado_talla (id_calzado, id_talla) VALUES ";
-    $valores = array();
-
-    foreach ($tallas_seleccionadas as $talla) {
-        // Verificar si la talla ya está asociada al modelo
-        $queryTallasAsociadas = "SELECT id_cal_talla FROM calzado_talla WHERE id_calzado = $id_calzado AND id_talla = $talla";
-        $resultadoTallasAsociadas = $conexion->query($queryTallasAsociadas);
-
-        if ($resultadoTallasAsociadas->num_rows == 0) {
-            $valores[] = "($id_calzado, '$talla')";
-        }
-    }
-
-    $sqlInsertarTallas .= implode(",", $valores);
-
-    // Ejecutar la consulta solo si se seleccionaron tallas nuevas
-    if (!empty($valores)) {
-        $conecCalzado = $conexion->query($sqlInsertarTallas);
-
-        if ($conecCalzado) {
-            $fecha_acceso = date("Y-m-d H:i:s");
-            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-            echo "<script>alert('Tallas agregadas correctamente');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
-            exit();
-        } else {
-            echo "<script>alert('Error al agregar las tallas');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
-            exit();
-        }
-    } else {
-        echo "<script>alert('Las tallas seleccionadas ya están asociadas al modelo');</script>";
-        echo "<script>window.location.href='panel-admin.php';</script>";
-        exit();
-    }
-}
-
-
-// Eliminar colores del calzado seleccionado
+// Eliminar colores del calzado
 if (isset($_POST["eliminar_colores"])) {
-    $modelo_eliminar_colores = mysqli_real_escape_string($conexion, $_POST["modelo_eliminar_colores"]);
-    $colores_seleccionados = isset($_POST["colores_seleccionados"]) ? $_POST["colores_seleccionados"] : array();
-    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_eliminar_colores'"))['id_calzado'];
-
-    // Verificar si los colores seleccionados están asociados al modelo
-    $coloresAsociadosQuery = "SELECT id_color
-                              FROM calzado_color
-                              WHERE id_calzado = $id_calzado
-                              AND id_color IN (" . implode(",", $colores_seleccionados) . ")";
-    $coloresAsociadosResult = $conexion->query($coloresAsociadosQuery);
-    $coloresAsociados = array();
-    while ($row = $coloresAsociadosResult->fetch_assoc()) {
-        $coloresAsociados[] = $row['id_color'];
-    }
-
-    // Crear una consulta SQL para eliminar varios colores a la vez
-    $sqlEliminarColores = "DELETE FROM calzado_color
-                           WHERE id_calzado = $id_calzado
-                           AND id_color IN (" . implode(",", $coloresAsociados) . ")";
-
-    // Ejecutar la consulta solo si se seleccionaron colores asociados
-    if (!empty($coloresAsociados)) {
-        $conecEliminarColor = $conexion->query($sqlEliminarColores);
-
-        if ($conecEliminarColor) {
-            $fecha_acceso = date("Y-m-d H:i:s");
-            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-            echo "<script>alert('Colores eliminados correctamente');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+    $colores_seleccionados = $_POST["colores_seleccionados"] ?? [];
+    
+    if (!empty($colores_seleccionados)) {
+        $placeholders = implode(',', array_fill(0, count($colores_seleccionados), '?'));
+        $sqlEliminar = "DELETE FROM calzado_color 
+                       WHERE id_calzado = ? AND id_color IN ($placeholders)";
+        
+        $stmtEliminar = $conexion->prepare($sqlEliminar);
+        $params = array_merge([$id_calzado], $colores_seleccionados);
+        
+        if ($stmtEliminar->execute($params)) {
+            registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
+            echo "<script>alert('Colores eliminados correctamente'); window.location.href='panel-admin.php';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al eliminar los colores');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Error al eliminar colores'); window.location.href='panel-admin.php';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('Los colores seleccionados no están asociados al modelo');</script>";
-        echo "<script>window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('No se seleccionaron colores para eliminar'); window.location.href='panel-admin.php';</script>";
         exit();
     }
 }
 
-// Eliminar tallas del calzado seleccionado
+// Agregar tallas al calzado
+if (isset($_POST["agregar_tallas"])) {
+    $tallas_seleccionadas = $_POST["tallas_seleccionadas"] ?? [];
+    $valores = [];
+    
+    foreach ($tallas_seleccionadas as $talla) {
+        // Verificar si la talla ya está asociada
+        $sqlVerificar = "SELECT id_cal_talla FROM calzado_talla 
+                         WHERE id_calzado = :id_calzado AND id_talla = :id_talla";
+        $stmtVerificar = $conexion->prepare($sqlVerificar);
+        $stmtVerificar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+        $stmtVerificar->bindParam(':id_talla', $talla, PDO::PARAM_INT);
+        $stmtVerificar->execute();
+        
+        if ($stmtVerificar->rowCount() == 0) {
+            $valores[] = "(:id_calzado, $talla)";
+        }
+    }
+    
+    if (!empty($valores)) {
+        $sqlInsertar = "INSERT INTO calzado_talla (id_calzado, id_talla) VALUES " . implode(",", $valores);
+        $stmtInsertar = $conexion->prepare($sqlInsertar);
+        $stmtInsertar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+        
+        if ($stmtInsertar->execute()) {
+            registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
+            echo "<script>alert('Tallas agregadas correctamente'); window.location.href='panel-admin.php';</script>";
+            exit();
+        } else {
+            echo "<script>alert('Error al agregar tallas'); window.location.href='panel-admin.php';</script>";
+            exit();
+        }
+    } else {
+        echo "<script>alert('Las tallas seleccionadas ya están asociadas al modelo'); window.location.href='panel-admin.php';</script>";
+        exit();
+    }
+}
+
+// Eliminar tallas del calzado
 if (isset($_POST["eliminar_tallas"])) {
-    $modelo_eliminar_tallas = mysqli_real_escape_string($conexion, $_POST["modelo_eliminar_tallas"]);
-    $tallas_seleccionadas = isset($_POST["tallas_seleccionadas"]) ? $_POST["tallas_seleccionadas"] : array();
-    $id_calzado = mysqli_fetch_assoc($conexion->query("SELECT id_calzado FROM calzado WHERE modelo = '$modelo_eliminar_tallas'"))['id_calzado'];
-
-    // Verificar si las tallas seleccionadas están asociadas al modelo
-    $tallasAsociadasQuery = "SELECT id_talla 
-                             FROM calzado_talla
-                             WHERE id_calzado = $id_calzado
-                             AND id_talla IN (" . implode(",", $tallas_seleccionadas) . ")";
-    $tallasAsociadasResult = $conexion->query($tallasAsociadasQuery);
-    $tallasAsociadas = array();
-    while ($row = $tallasAsociadasResult->fetch_assoc()) {
-        $tallasAsociadas[] = $row['id_talla'];
-    }
-
-    // Crear una consulta SQL para eliminar varias tallas a la vez
-    $sqlEliminarTallas = "DELETE FROM calzado_talla
-                          WHERE id_calzado = $id_calzado
-                          AND id_talla IN (" . implode(",", $tallasAsociadas) . ")";
-
-    // Ejecutar la consulta solo si se seleccionaron tallas asociadas
-    if (!empty($tallasAsociadas)) {
-        $conecEliminarTalla = $conexion->query($sqlEliminarTallas);
-
-        if ($conecEliminarTalla) {
-            $fecha_acceso = date("Y-m-d H:i:s");
-            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                          VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-            $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
-            echo "<script>alert('Tallas eliminadas correctamente');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+    $tallas_seleccionadas = $_POST["tallas_seleccionadas"] ?? [];
+    
+    if (!empty($tallas_seleccionadas)) {
+        $placeholders = implode(',', array_fill(0, count($tallas_seleccionadas), '?'));
+        $sqlEliminar = "DELETE FROM calzado_talla 
+                       WHERE id_calzado = ? AND id_talla IN ($placeholders)";
+        
+        $stmtEliminar = $conexion->prepare($sqlEliminar);
+        $params = array_merge([$id_calzado], $tallas_seleccionadas);
+        
+        if ($stmtEliminar->execute($params)) {
+            registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
+            echo "<script>alert('Tallas eliminadas correctamente'); window.location.href='panel-admin.php';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al eliminar las tallas');</script>";
-            echo "<script>window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Error al eliminar tallas'); window.location.href='panel-admin.php';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('Las tallas seleccionadas no están asociadas al modelo');</script>";
-        echo "<script>window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('No se seleccionaron tallas para eliminar'); window.location.href='panel-admin.php';</script>";
         exit();
     }
 }
 
+// Obtener colores y tallas disponibles
+$sqlColores = "SELECT * FROM color";
+$stmtColores = $conexion->prepare($sqlColores);
+$stmtColores->execute();
+
+$sqlTallas = "SELECT * FROM talla";
+$stmtTallas = $conexion->prepare($sqlTallas);
+$stmtTallas->execute();
+
+// Obtener colores y tallas asociadas al calzado
+$sqlColoresAsociados = "SELECT c.id_color, c.nombre_color
+                       FROM calzado_color cc
+                       INNER JOIN color c ON cc.id_color = c.id_color
+                       WHERE cc.id_calzado = :id_calzado";
+$stmtColoresAsociados = $conexion->prepare($sqlColoresAsociados);
+$stmtColoresAsociados->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+$stmtColoresAsociados->execute();
+
+$sqlTallasAsociadas = "SELECT t.id_talla, t.talla
+                      FROM calzado_talla ct
+                      INNER JOIN talla t ON ct.id_talla = t.id_talla
+                      WHERE ct.id_calzado = :id_calzado";
+$stmtTallasAsociadas = $conexion->prepare($sqlTallasAsociadas);
+$stmtTallasAsociadas->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+$stmtTallasAsociadas->execute();
 
 ?>
 
@@ -289,98 +287,91 @@ if (isset($_POST["eliminar_tallas"])) {
 </head>
 
 <body>
-    <?php include ("header/header.php"); ?>
+    <?php include("header/header.php"); ?>
     <div class="main-container">
         <div class="superior">
-            <label class="titulo-principal">EDITAR <?php echo $modelo; ?></label>
+            <label class="titulo-principal">EDITAR <?php echo htmlspecialchars($modelo); ?></label>
         </div>
 
         <div class="container">
             <div class="titulos">
-
                 <h2>MODELO</h2>
-
                 <h2>TIPO</h2>
-
                 <h2>MATERIAL</h2>
-
                 <h2>MARCA</h2>
-
                 <h2>PRECIO</h2>
-
                 <h2>CANTIDAD</h2>
-
             </div>
             <div class="datos">
                 <form>
                     <div class="form-group">
-                        <input type="text" id="modelo" value="<?php echo $modelo; ?>" disabled>
+                        <input type="text" id="modelo" value="<?php echo htmlspecialchars($modelo); ?>" disabled>
                     </div>
 
                     <div class="form-group">
-                        <input type="text" id="tipo" value="<?php echo $tipo; ?>" disabled>
+                        <input type="text" id="tipo" value="<?php echo htmlspecialchars($tipo); ?>" disabled>
                     </div>
 
                     <div class="form-group">
-                        <input type="text" id="material" value="<?php echo $material; ?>" disabled>
+                        <input type="text" id="material" value="<?php echo htmlspecialchars($material); ?>" disabled>
                     </div>
 
                     <div class="form-group">
-                        <input type="text" id="marca" value="<?php echo $marca; ?>" disabled>
+                        <input type="text" id="marca" value="<?php echo htmlspecialchars($marca); ?>" disabled>
                     </div>
 
                     <div class="form-group">
-                        <input type="text" id="precio" value="<?php echo $precio; ?>" disabled>
+                        <input type="text" id="precio" value="<?php echo htmlspecialchars($precio); ?>" disabled>
                     </div>
 
                     <div class="form-group">
-                        <input type="text" id="cantidad" value="<?php echo $cantidad; ?>" disabled>
+                        <input type="text" id="cantidad" value="<?php echo htmlspecialchars($cantidad); ?>" disabled>
                     </div>
                 </form>
             </div>
 
             <div class="actualizar">
-                <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
-
+                <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
                     <div class="form-group">
-                        <input class="noeditar" type="text" name="modelo" id="modelo" value="<?php echo $modelo; ?>"
-                            readonly>
+                        <input class="noeditar" type="text" name="modelo" id="modelo" value="<?php echo htmlspecialchars($modelo); ?>" readonly>
                     </div>
 
                     <div class="form-group">
                         <select name="tipo">
-                            <?php while ($row = $resultadoTipos->fetch_assoc()): ?>
-                                <option value="<?php echo $row['id_tipo']; ?>" <?php if ($row['id_tipo'] == $tipo_id)
-                                       echo 'selected'; ?>><?php echo $row['tipo_calzado']; ?></option>
-                            <?php endwhile; ?>
+                            <?php foreach ($stmtTipos->fetchAll(PDO::FETCH_ASSOC) as $row): ?>
+                                <option value="<?php echo $row['id_tipo']; ?>" <?php if ($row['id_tipo'] == $tipo_id) echo 'selected'; ?>>
+                                    <?php echo htmlspecialchars($row['tipo_calzado']); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <select name="material">
-                            <?php while ($row = $resultadoMateriales->fetch_assoc()): ?>
-                                <option value="<?php echo $row['id_material']; ?>" <?php if ($row['id_material'] == $material_id)
-                                       echo 'selected'; ?>><?php echo $row['material']; ?>
+                            <?php foreach ($stmtMateriales->fetchAll(PDO::FETCH_ASSOC) as $row): ?>
+                                <option value="<?php echo $row['id_material']; ?>" <?php if ($row['id_material'] == $material_id) echo 'selected'; ?>>
+                                    <?php echo htmlspecialchars($row['material']); ?>
                                 </option>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <select name="marca">
-                            <?php while ($row = $resultadoMarcas->fetch_assoc()): ?>
-                                <option value="<?php echo $row['id_marca']; ?>" <?php if ($row['id_marca'] == $marca_id)
-                                       echo 'selected'; ?>><?php echo $row['marca']; ?></option>
-                            <?php endwhile; ?>
+                            <?php foreach ($stmtMarcas->fetchAll(PDO::FETCH_ASSOC) as $row): ?>
+                                <option value="<?php echo $row['id_marca']; ?>" <?php if ($row['id_marca'] == $marca_id) echo 'selected'; ?>>
+                                    <?php echo htmlspecialchars($row['marca']); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <input type="text" name="precio" id="precio" value="<?php echo $precio; ?>">
+                        <input type="text" name="precio" id="precio" value="<?php echo htmlspecialchars($precio); ?>">
                     </div>
 
                     <div class="form-group">
-                        <input type="text" name="cantidad" id="cantidad" value="<?php echo $cantidad; ?>">
+                        <input type="text" name="cantidad" id="cantidad" value="<?php echo htmlspecialchars($cantidad); ?>">
                     </div>
 
                     <div class="botones">
@@ -389,95 +380,57 @@ if (isset($_POST["eliminar_tallas"])) {
                     </div>
                 </form>
             </div>
-
         </div>
 
         <div class="tyc">
             <div class="agregar">
                 <div class="colores">
                     <h2>Agregar Colores</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
-                        <input type="hidden" name="modelo_agregar_colores" value="<?php echo $modelo; ?>">
-                        <?php
-                        // Mostrar checkboxes para los colores
-                        $sqlColores = "SELECT * FROM color";
-                        $resultadoColores = $conexion->query($sqlColores);
-                        while ($row = $resultadoColores->fetch_assoc()) {
-                            echo "<input type='checkbox' name='colores_seleccionados[]' value='" . $row['id_color'] . "'>" . $row['nombre_color'] . "<br>";
-                        }
-                        ?>
+                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                        <?php foreach ($stmtColores->fetchAll(PDO::FETCH_ASSOC) as $color): ?>
+                            <input type="checkbox" name="colores_seleccionados[]" value="<?php echo $color['id_color']; ?>">
+                            <?php echo htmlspecialchars($color['nombre_color']); ?><br>
+                        <?php endforeach; ?>
                         <button class="btn-agregar" type="submit" name="agregar_colores">Agregar Colores</button>
                     </form>
                 </div>
 
-
-
-
                 <div class="tallas">
                     <h2>Agregar Tallas</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
-                        <input type="hidden" name="modelo_agregar_tallas" value="<?php echo $modelo; ?>">
-                        <?php
-                        // Mostrar checkboxes para las tallas
-                        $sqlTallas = "SELECT * FROM talla";
-                        $resultadoTallas = $conexion->query($sqlTallas);
-                        while ($row = $resultadoTallas->fetch_assoc()) {
-                            echo "<input type='checkbox' name='tallas_seleccionadas[]' value='" . $row['id_talla'] . "'>" . $row['talla'] . "<br>";
-                        }
-                        ?>
+                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                        <?php foreach ($stmtTallas->fetchAll(PDO::FETCH_ASSOC) as $talla): ?>
+                            <input type="checkbox" name="tallas_seleccionadas[]" value="<?php echo $talla['id_talla']; ?>">
+                            <?php echo htmlspecialchars($talla['talla']); ?><br>
+                        <?php endforeach; ?>
                         <button class="btn-agregar" type="submit" name="agregar_tallas">Agregar Tallas</button>
                     </form>
                 </div>
-
             </div>
 
             <div class="eliminar">
-
                 <div class="colores">
-                <h2>Eliminar Colores</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
-                        <input type="hidden" name="modelo_eliminar_colores" value="<?php echo $modelo; ?>">
-
-                        <?php
-                        // Mostrar checkboxes para los colores asociados al modelo
-                        $sqlColoresAsociados = "SELECT c.id_color, c.nombre_color
-                            FROM calzado_color cc
-                            INNER JOIN color c ON cc.id_color = c.id_color
-                            WHERE cc.id_calzado = (SELECT id_calzado FROM calzado WHERE modelo = '$modelo')";
-                        $resultadoColoresAsociados = $conexion->query($sqlColoresAsociados);
-                        while ($row = $resultadoColoresAsociados->fetch_assoc()) {
-                            echo "<input type='checkbox' name='colores_seleccionados[]' value='" . $row['id_color'] . "'>" . $row['nombre_color'] . "<br>";
-                        }
-                        ?>
+                    <h2>Eliminar Colores</h2>
+                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                        <?php foreach ($stmtColoresAsociados->fetchAll(PDO::FETCH_ASSOC) as $color): ?>
+                            <input type="checkbox" name="colores_seleccionados[]" value="<?php echo $color['id_color']; ?>">
+                            <?php echo htmlspecialchars($color['nombre_color']); ?><br>
+                        <?php endforeach; ?>
                         <button class="btn-eliminar" type="submit" name="eliminar_colores">Eliminar Colores</button>
                     </form>
                 </div>
 
                 <div class="tallas">
                     <h2>Eliminar Tallas</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="POST">
-                        <input type="hidden" name="modelo_eliminar_tallas" value="<?php echo $modelo; ?>">
-
-                        <?php
-                        // Mostrar checkboxes para las tallas asociadas al modelo
-                        $sqlTallasAsociadas = "SELECT t.id_talla, t.talla
-                           FROM calzado_talla ct
-                           INNER JOIN talla t ON ct.id_talla = t.id_talla
-                           WHERE ct.id_calzado = (SELECT id_calzado FROM calzado WHERE modelo = '$modelo')";
-                        $resultadoTallasAsociadas = $conexion->query($sqlTallasAsociadas);
-                        while ($row = $resultadoTallasAsociadas->fetch_assoc()) {
-                            echo "<input type='checkbox' name='tallas_seleccionadas[]' value='" . $row['id_talla'] . "'>" . $row['talla'] . "<br>";
-                        }
-                        ?>
+                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                        <?php foreach ($stmtTallasAsociadas->fetchAll(PDO::FETCH_ASSOC) as $talla): ?>
+                            <input type="checkbox" name="tallas_seleccionadas[]" value="<?php echo $talla['id_talla']; ?>">
+                            <?php echo htmlspecialchars($talla['talla']); ?><br>
+                        <?php endforeach; ?>
                         <button class="btn-eliminar" type="submit" name="eliminar_tallas">Eliminar Tallas</button>
                     </form>
                 </div>
             </div>
         </div>
-
-
     </div>
-
 </body>
-
 </html>

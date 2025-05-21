@@ -1,59 +1,79 @@
 <?php
 include("conexion.php");
 
-//SECCION DE REGISTRO CALZADO
-// Obtener tipos de calzado de la base de datos
+// SECCIÓN DE REGISTRO CALZADO
+// Obtener tipos, materiales y marcas de calzado de la base de datos usando PDO
 $sqlTipos = "SELECT * FROM tipo";
-$resultadoTipos = $conexion->query($sqlTipos);
-// Obtener materiales de calzado de la base de datos
+$stmtTipos = $conexion->prepare($sqlTipos);
+$stmtTipos->execute();
+$resultadoTipos = $stmtTipos->fetchAll();
+
 $sqlMateriales = "SELECT * FROM material";
-$resultadoMateriales = $conexion->query($sqlMateriales);
-// Obtener marcas de calzado de la base de datos
+$stmtMateriales = $conexion->prepare($sqlMateriales);
+$stmtMateriales->execute();
+$resultadoMateriales = $stmtMateriales->fetchAll();
+
 $sqlMarcas = "SELECT * FROM marca";
-$resultadoMarcas = $conexion->query($sqlMarcas);
+$stmtMarcas = $conexion->prepare($sqlMarcas);
+$stmtMarcas->execute();
+$resultadoMarcas = $stmtMarcas->fetchAll();
 
-$id_calzado = isset($_GET['id']) ? $_GET['id'] : null; // Obtener el ID del calzado si está presente en la URL
+// Obtener el ID del calzado si está presente en la URL
+$id_calzado = isset($_GET['id']) ? $_GET['id'] : null;
 
+// Obtener información del usuario
 session_start();
-    $id_usuario_accion = $_SESSION['id_usuario'];
-    // Consulta para obtener el nombre de usuario a partir del id_usuario
-    $sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = $id_usuario_accion";
-    $resultado_nombre_usuario = mysqli_query($conexion, $sql_obtener_nombre_usuario);
+$id_usuario_accion = $_SESSION['id_usuario'];
 
-    if ($resultado_nombre_usuario && mysqli_num_rows($resultado_nombre_usuario) > 0) {
-        $row_nombre_usuario = mysqli_fetch_assoc($resultado_nombre_usuario);
-        $nombre_usuario_accion = $row_nombre_usuario['nombre_user'];
-    } else {
-        $nombre_usuario_accion = '';
-    }
-    session_abort();
+// Obtener el nombre del usuario de la base de datos
+$sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = :id_usuario";
+$stmt_usuario = $conexion->prepare($sql_obtener_nombre_usuario);
+$stmt_usuario->bindValue(":id_usuario", $id_usuario_accion, PDO::PARAM_INT);
+$stmt_usuario->execute();
+$row_nombre_usuario = $stmt_usuario->fetch();
+
+$nombre_usuario_accion = $row_nombre_usuario ? $row_nombre_usuario['nombre_user'] : '';
 
 if (isset($_POST["registrar"])) {
-    $modelo = mysqli_real_escape_string($conexion, $_POST["modelo"]);
-    $tipo = mysqli_real_escape_string($conexion, $_POST["tipo"]);
-    $material = mysqli_real_escape_string($conexion, $_POST["material"]);
-    $marca = mysqli_real_escape_string($conexion, $_POST["marca"]);
-    $precio = mysqli_real_escape_string($conexion, $_POST["precio"]);
-    $cantidad = mysqli_real_escape_string($conexion, $_POST["cantidad"]);
+    // Recoger los datos del formulario
+    $modelo = htmlspecialchars($_POST["modelo"]);
+    $tipo = $_POST["tipo"];
+    $material = $_POST["material"];
+    $marca = $_POST["marca"];
+    $precio = $_POST["precio"];
+    $cantidad = $_POST["cantidad"];
 
-    $queryCalzado = "SELECT id_calzado FROM calzado WHERE modelo = '$modelo'";
-    $conecQueryCalzado = $conexion->query($queryCalzado);
-    $filas = $conecQueryCalzado->num_rows;
-
-    if ($filas > 0) {
+    // Verificar si el modelo ya existe en la base de datos
+    $sqlVerificarModelo = "SELECT id_calzado FROM calzado WHERE modelo = :modelo";
+    $stmtVerificar = $conexion->prepare($sqlVerificarModelo);
+    $stmtVerificar->bindValue(":modelo", $modelo);
+    $stmtVerificar->execute();
+    
+    if ($stmtVerificar->rowCount() > 0) {
         echo "<script>alert('El modelo ya existe');</script>";
     } else {
-        // Insertar el nuevo modelo
-        $sqlInsertarModelo = "INSERT INTO calzado(modelo, id_tipo, id_material, id_marca, precio, cantidad) 
-                       VALUES('$modelo','$tipo','$material', '$marca', '$precio', '$cantidad')";
-        $conecCalzado = $conexion->query($sqlInsertarModelo);
+        // Insertar el nuevo modelo de calzado
+        $sqlInsertarModelo = "INSERT INTO calzado (modelo, id_tipo, id_material, id_marca, precio, cantidad) 
+                              VALUES (:modelo, :tipo, :material, :marca, :precio, :cantidad)";
+        $stmtInsertar = $conexion->prepare($sqlInsertarModelo);
+        $stmtInsertar->bindValue(":modelo", $modelo);
+        $stmtInsertar->bindValue(":tipo", $tipo);
+        $stmtInsertar->bindValue(":material", $material);
+        $stmtInsertar->bindValue(":marca", $marca);
+        $stmtInsertar->bindValue(":precio", $precio);
+        $stmtInsertar->bindValue(":cantidad", $cantidad);
+        $stmtInsertar->execute();
 
-        if ($conecCalzado) {
+        if ($stmtInsertar) {
             // Insertar el registro en la tabla registro_acceso
-        $fecha_acceso = date("Y-m-d H:i:s");
-        $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
-                                      VALUES ($id_usuario_accion, '$nombre_usuario_accion', '$fecha_acceso')";
-        $resultadoInsertarRegistroAcceso = $conexion->query($sqlInsertarRegistroAcceso);
+            $fecha_acceso = date("Y-m-d H:i:s");
+            $sqlInsertarRegistroAcceso = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
+                                          VALUES (:id_usuario, :nombre_usuario, :fecha_acceso)";
+            $stmtRegistro = $conexion->prepare($sqlInsertarRegistroAcceso);
+            $stmtRegistro->bindValue(":id_usuario", $id_usuario_accion, PDO::PARAM_INT);
+            $stmtRegistro->bindValue(":nombre_usuario", $nombre_usuario_accion);
+            $stmtRegistro->bindValue(":fecha_acceso", $fecha_acceso);
+            $stmtRegistro->execute();
 
             echo "<script>alert('Registro exitoso');</script>";
             echo "<script>window.location.href='panel-admin.php';</script>";
@@ -65,15 +85,17 @@ if (isset($_POST["registrar"])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShoeStock - Agregar Calzado</title>
     <link rel="stylesheet" href="styles/agregar-calzado.css">
 </head>
 <body>
     <?php include("header/header.php"); ?>
     <div class="main-container">
-    <div class="superior">
+        <div class="superior">
             <label class="titulo-principal">REGISTRAR CALZADO</label>
         </div>
         <div class="container">
@@ -93,32 +115,32 @@ if (isset($_POST["registrar"])) {
                     <div class="form-group">
                         <select name="tipo" required>
                             <option value="">Selecciona un tipo</option>
-                            <?php while ($row = $resultadoTipos->fetch_assoc()) { ?>
-                                <option value="<?php echo $row['id_tipo']; ?>"><?php echo $row['tipo_calzado']; ?></option>
+                            <?php foreach ($resultadoTipos as $row) { ?>
+                                <option value="<?php echo $row['id_tipo']; ?>"><?php echo htmlspecialchars($row['tipo_calzado']); ?></option>
                             <?php } ?>
                         </select>
                     </div>
                     <div class="form-group">
                         <select name="material" required>
                             <option value="">Selecciona un material</option>
-                            <?php while ($row = $resultadoMateriales->fetch_assoc()) { ?>
-                                <option value="<?php echo $row['id_material']; ?>"><?php echo $row['material']; ?></option>
+                            <?php foreach ($resultadoMateriales as $row) { ?>
+                                <option value="<?php echo $row['id_material']; ?>"><?php echo htmlspecialchars($row['material']); ?></option>
                             <?php } ?>
                         </select>
                     </div>
                     <div class="form-group">
                         <select name="marca" required>
                             <option value="">Selecciona una marca</option>
-                            <?php while ($row = $resultadoMarcas->fetch_assoc()) { ?>
-                                <option value="<?php echo $row['id_marca']; ?>"><?php echo $row['marca']; ?></option>
+                            <?php foreach ($resultadoMarcas as $row) { ?>
+                                <option value="<?php echo $row['id_marca']; ?>"><?php echo htmlspecialchars($row['marca']); ?></option>
                             <?php } ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <input type="text" name="precio" placeholder="Precio" required>
+                        <input type="number" name="precio" placeholder="Precio" required>
                     </div>
                     <div class="form-group">
-                        <input type="text" name="cantidad" placeholder="Stock" required>
+                        <input type="number" name="cantidad" placeholder="Stock" required>
                     </div>
                     <button type="submit" name="registrar" class="registrar">Registrar</button>
                     <button type="reset" class="reset">Reset</button>
