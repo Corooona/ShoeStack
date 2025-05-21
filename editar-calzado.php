@@ -125,37 +125,47 @@ if (isset($_POST["actualizar"])) {
 // Agregar colores al calzado
 if (isset($_POST["agregar_colores"])) {
     $colores_seleccionados = $_POST["colores_seleccionados"] ?? [];
-    $valores = [];
     
-    foreach ($colores_seleccionados as $color) {
-        // Verificar si el color ya está asociado
-        $sqlVerificar = "SELECT id_cal_color FROM calzado_color 
-                         WHERE id_calzado = :id_calzado AND id_color = :id_color";
-        $stmtVerificar = $conexion->prepare($sqlVerificar);
-        $stmtVerificar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
-        $stmtVerificar->bindParam(':id_color', $color, PDO::PARAM_INT);
-        $stmtVerificar->execute();
+    if (!empty($colores_seleccionados)) {
+        // Preparar una sola consulta con múltiples inserciones
+        $stmt = $conexion->prepare("INSERT INTO calzado_color (id_calzado, id_color) VALUES (:id_calzado, :id_color)");
         
-        if ($stmtVerificar->rowCount() == 0) {
-            $valores[] = "(:id_calzado, $color)";
+        // Iniciar transacción
+        $conexion->beginTransaction();
+        $insertados = 0;
+        
+        foreach ($colores_seleccionados as $color) {
+            // Verificar si el color ya está asociado
+            $sqlVerificar = "SELECT id_cal_color FROM calzado_color 
+                           WHERE id_calzado = :id_calzado AND id_color = :id_color";
+            $stmtVerificar = $conexion->prepare($sqlVerificar);
+            $stmtVerificar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+            $stmtVerificar->bindParam(':id_color', $color, PDO::PARAM_INT);
+            $stmtVerificar->execute();
+            
+            if ($stmtVerificar->rowCount() == 0) {
+                // Si no existe, insertar
+                $stmt->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+                $stmt->bindParam(':id_color', $color, PDO::PARAM_INT);
+                if ($stmt->execute()) {
+                    $insertados++;
+                }
+            }
         }
-    }
-    
-    if (!empty($valores)) {
-        $sqlInsertar = "INSERT INTO calzado_color (id_calzado, id_color) VALUES " . implode(",", $valores);
-        $stmtInsertar = $conexion->prepare($sqlInsertar);
-        $stmtInsertar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
         
-        if ($stmtInsertar->execute()) {
+        // Confirmar transacción
+        $conexion->commit();
+        
+        if ($insertados > 0) {
             registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
-            echo "<script>alert('Colores agregados correctamente'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Colores agregados correctamente'); window.location.href='';;</script>";
             exit();
         } else {
-            echo "<script>alert('Error al agregar colores'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Los colores seleccionados ya están asociados al modelo'); window.location.href='';;</script>";
             exit();
         }
     } else {
-        echo "<script>alert('Los colores seleccionados ya están asociados al modelo'); window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('No se seleccionaron colores para agregar'); window.location.href='';;</script>";
         exit();
     }
 }
@@ -174,14 +184,14 @@ if (isset($_POST["eliminar_colores"])) {
         
         if ($stmtEliminar->execute($params)) {
             registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
-            echo "<script>alert('Colores eliminados correctamente'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Colores eliminados correctamente'); window.location.href='';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al eliminar colores'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Error al eliminar colores'); window.location.href='';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('No se seleccionaron colores para eliminar'); window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('No se seleccionaron colores para eliminar'); window.location.href='';</script>";
         exit();
     }
 }
@@ -189,37 +199,47 @@ if (isset($_POST["eliminar_colores"])) {
 // Agregar tallas al calzado
 if (isset($_POST["agregar_tallas"])) {
     $tallas_seleccionadas = $_POST["tallas_seleccionadas"] ?? [];
-    $valores = [];
     
-    foreach ($tallas_seleccionadas as $talla) {
-        // Verificar si la talla ya está asociada
-        $sqlVerificar = "SELECT id_cal_talla FROM calzado_talla 
-                         WHERE id_calzado = :id_calzado AND id_talla = :id_talla";
-        $stmtVerificar = $conexion->prepare($sqlVerificar);
-        $stmtVerificar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
-        $stmtVerificar->bindParam(':id_talla', $talla, PDO::PARAM_INT);
-        $stmtVerificar->execute();
+    if (!empty($tallas_seleccionadas)) {
+        // Preparar una sola consulta con múltiples inserciones
+        $stmt = $conexion->prepare("INSERT INTO calzado_talla (id_calzado, id_talla) VALUES (:id_calzado, :id_talla)");
         
-        if ($stmtVerificar->rowCount() == 0) {
-            $valores[] = "(:id_calzado, $talla)";
+        // Iniciar transacción
+        $conexion->beginTransaction();
+        $insertados = 0;
+        
+        foreach ($tallas_seleccionadas as $talla) {
+            // Verificar si la talla ya está asociada
+            $sqlVerificar = "SELECT id_cal_talla FROM calzado_talla 
+                           WHERE id_calzado = :id_calzado AND id_talla = :id_talla";
+            $stmtVerificar = $conexion->prepare($sqlVerificar);
+            $stmtVerificar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+            $stmtVerificar->bindParam(':id_talla', $talla, PDO::PARAM_INT);
+            $stmtVerificar->execute();
+            
+            if ($stmtVerificar->rowCount() == 0) {
+                // Si no existe, insertar
+                $stmt->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
+                $stmt->bindParam(':id_talla', $talla, PDO::PARAM_INT);
+                if ($stmt->execute()) {
+                    $insertados++;
+                }
+            }
         }
-    }
-    
-    if (!empty($valores)) {
-        $sqlInsertar = "INSERT INTO calzado_talla (id_calzado, id_talla) VALUES " . implode(",", $valores);
-        $stmtInsertar = $conexion->prepare($sqlInsertar);
-        $stmtInsertar->bindParam(':id_calzado', $id_calzado, PDO::PARAM_INT);
         
-        if ($stmtInsertar->execute()) {
+        // Confirmar transacción
+        $conexion->commit();
+        
+        if ($insertados > 0) {
             registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
-            echo "<script>alert('Tallas agregadas correctamente'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Tallas agregadas correctamente'); window.location.href='';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al agregar tallas'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Las tallas seleccionadas ya están asociadas al modelo'); window.location.href='';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('Las tallas seleccionadas ya están asociadas al modelo'); window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('No se seleccionaron tallas para agregar'); window.location.href='';</script>";
         exit();
     }
 }
@@ -238,14 +258,14 @@ if (isset($_POST["eliminar_tallas"])) {
         
         if ($stmtEliminar->execute($params)) {
             registrarAcceso($conexion, $id_usuario_accion, $nombre_usuario_accion);
-            echo "<script>alert('Tallas eliminadas correctamente'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Tallas eliminadas correctamente'); window.location.href='';</script>";
             exit();
         } else {
-            echo "<script>alert('Error al eliminar tallas'); window.location.href='panel-admin.php';</script>";
+            echo "<script>alert('Error al eliminar tallas'); window.location.href='';</script>";
             exit();
         }
     } else {
-        echo "<script>alert('No se seleccionaron tallas para eliminar'); window.location.href='panel-admin.php';</script>";
+        echo "<script>alert('No se seleccionaron tallas para eliminar'); window.location.href='';</script>";
         exit();
     }
 }
@@ -383,54 +403,124 @@ $stmtTallasAsociadas->execute();
         </div>
 
         <div class="tyc">
-            <div class="agregar">
-                <div class="colores">
-                    <h2>Agregar Colores</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
-                        <?php foreach ($stmtColores->fetchAll(PDO::FETCH_ASSOC) as $color): ?>
-                            <input type="checkbox" name="colores_seleccionados[]" value="<?php echo $color['id_color']; ?>">
-                            <?php echo htmlspecialchars($color['nombre_color']); ?><br>
-                        <?php endforeach; ?>
-                        <button class="btn-agregar" type="submit" name="agregar_colores">Agregar Colores</button>
-                    </form>
-                </div>
-
-                <div class="tallas">
-                    <h2>Agregar Tallas</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
-                        <?php foreach ($stmtTallas->fetchAll(PDO::FETCH_ASSOC) as $talla): ?>
-                            <input type="checkbox" name="tallas_seleccionadas[]" value="<?php echo $talla['id_talla']; ?>">
-                            <?php echo htmlspecialchars($talla['talla']); ?><br>
-                        <?php endforeach; ?>
-                        <button class="btn-agregar" type="submit" name="agregar_tallas">Agregar Tallas</button>
-                    </form>
-                </div>
+        <div class="agregar">
+            <div class="colores">
+                <h2>Agregar Colores</h2>
+                <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                    <div class="checkbox-container">
+                        <?php 
+                        $coloresDisponibles = $stmtColores->fetchAll(PDO::FETCH_ASSOC);
+                        $coloresAsociados = $stmtColoresAsociados->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        // Obtener IDs de colores ya asociados
+                        $coloresAsociadosIds = array_column($coloresAsociados, 'id_color');
+                        
+                        foreach ($coloresDisponibles as $color): 
+                            if (!in_array($color['id_color'], $coloresAsociadosIds)):
+                        ?>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="colores_seleccionados[]" 
+                                       value="<?php echo $color['id_color']; ?>" id="color_<?php echo $color['id_color']; ?>">
+                                <label for="color_<?php echo $color['id_color']; ?>">
+                                    <?php echo htmlspecialchars($color['nombre_color']); ?>
+                                </label>
+                            </div>
+                        <?php 
+                            endif;
+                        endforeach; 
+                        ?>
+                    </div>
+                    <button class="btn-agregar" type="submit" name="agregar_colores">Agregar Colores Seleccionados</button>
+                </form>
             </div>
 
-            <div class="eliminar">
-                <div class="colores">
-                    <h2>Eliminar Colores</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
-                        <?php foreach ($stmtColoresAsociados->fetchAll(PDO::FETCH_ASSOC) as $color): ?>
-                            <input type="checkbox" name="colores_seleccionados[]" value="<?php echo $color['id_color']; ?>">
-                            <?php echo htmlspecialchars($color['nombre_color']); ?><br>
-                        <?php endforeach; ?>
-                        <button class="btn-eliminar" type="submit" name="eliminar_colores">Eliminar Colores</button>
-                    </form>
-                </div>
+            <div class="tallas">
+                <h2>Agregar Tallas</h2>
+                <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                    <div class="checkbox-container">
+                        <?php 
+                        $tallasDisponibles = $stmtTallas->fetchAll(PDO::FETCH_ASSOC);
+                        $tallasAsociadas = $stmtTallasAsociadas->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        // Obtener IDs de tallas ya asociadas
+                        $tallasAsociadasIds = array_column($tallasAsociadas, 'id_talla');
+                        
+                        foreach ($tallasDisponibles as $talla): 
+                            if (!in_array($talla['id_talla'], $tallasAsociadasIds)):
+                        ?>
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="tallas_seleccionadas[]" 
+                                       value="<?php echo $talla['id_talla']; ?>" id="talla_<?php echo $talla['id_talla']; ?>">
+                                <label for="talla_<?php echo $talla['id_talla']; ?>">
+                                    <?php echo htmlspecialchars($talla['talla']); ?>
+                                </label>
+                            </div>
+                        <?php 
+                            endif;
+                        endforeach; 
+                        ?>
+                    </div>
+                    <button class="btn-agregar" type="submit" name="agregar_tallas">Agregar Tallas Seleccionadas</button>
+                </form>
+            </div>
+        </div>
 
-                <div class="tallas">
-                    <h2>Eliminar Tallas</h2>
-                    <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
-                        <?php foreach ($stmtTallasAsociadas->fetchAll(PDO::FETCH_ASSOC) as $talla): ?>
-                            <input type="checkbox" name="tallas_seleccionadas[]" value="<?php echo $talla['id_talla']; ?>">
-                            <?php echo htmlspecialchars($talla['talla']); ?><br>
-                        <?php endforeach; ?>
-                        <button class="btn-eliminar" type="submit" name="eliminar_tallas">Eliminar Tallas</button>
-                    </form>
-                </div>
+        <div class="eliminar">
+            <div class="colores">
+                <h2>Eliminar Colores</h2>
+                <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                    <?php if (count($coloresAsociados) > 0): ?>
+                        <div class="checkbox-container">
+                            <?php foreach ($coloresAsociados as $color): ?>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="colores_seleccionados[]" 
+                                           value="<?php echo $color['id_color']; ?>" id="del_color_<?php echo $color['id_color']; ?>">
+                                    <label for="del_color_<?php echo $color['id_color']; ?>">
+                                        <?php echo htmlspecialchars($color['nombre_color']); ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button class="btn-eliminar" type="submit" name="eliminar_colores">Eliminar Colores Seleccionados</button>
+                    <?php else: ?>
+                        <p>No hay colores asociados a este modelo.</p>
+                    <?php endif; ?>
+                </form>
+            </div>
+
+            <div class="tallas">
+                <h2>Eliminar Tallas</h2>
+                <form action="<?php echo $_SERVER["PHP_SELF"] . '?id=' . $id_calzado; ?>" method="POST">
+                    <?php if (count($tallasAsociadas) > 0): ?>
+                        <div class="checkbox-container">
+                            <?php foreach ($tallasAsociadas as $talla): ?>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" name="tallas_seleccionadas[]" 
+                                           value="<?php echo $talla['id_talla']; ?>" id="del_talla_<?php echo $talla['id_talla']; ?>">
+                                    <label for="del_talla_<?php echo $talla['id_talla']; ?>">
+                                        <?php echo htmlspecialchars($talla['talla']); ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button class="btn-eliminar" type="submit" name="eliminar_tallas">Eliminar Tallas Seleccionadas</button>
+                    <?php else: ?>
+                        <p>No hay tallas asociadas a este modelo.</p>
+                    <?php endif; ?>
+                </form>
             </div>
         </div>
     </div>
+
+    <script>
+        // Seleccionar/deseleccionar todos los checkboxes
+        function selectAll(containerId, check) {
+            const container = document.getElementById(containerId);
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = check;
+            });
+        }
+    </script>
 </body>
 </html>
