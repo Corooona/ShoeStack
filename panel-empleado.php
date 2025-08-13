@@ -48,7 +48,6 @@ $resultado = $stmtCalzado->fetchAll(PDO::FETCH_ASSOC);
     <div class="main-container">
         <!-- PARTE SUPERIOR -->
         <div class="superior">
-            <a href="agregar-calzado.php" class="add-new-btn">AÑADIR NUEVO</a>
             <label class="titulo-principal">LISTA DE CALZADO</label>
 
             <div class="buscar">

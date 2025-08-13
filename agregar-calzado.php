@@ -76,14 +76,6 @@ if (isset($_POST["registrar"])) {
             $stmtRegistro->execute();
 
             echo "<script>alert('Registro exitoso');</script>";
-
-            if($SESSION['rol']==1){
-                echo "<script>window.location.href='panel-admin.php';</script>";    
-            }
-            else{
-                echo "<script>window.location.href='panel-empleado.php';</script>";
-            }
-
             
         } else {
             echo "<script>alert('Error al registrarse');</script>";

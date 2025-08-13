@@ -67,6 +67,21 @@ if ($id_usuario_accion) {
 }
 
 // Función para registrar acciones
+session_start();
+$id_usuario_accion = $_SESSION['id_usuario'] ?? null;
+$nombre_usuario_accion = '';
+
+if ($id_usuario_accion) {
+    $sql = "SELECT nombre_user FROM usuario WHERE id_usuario = :id_usuario";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bindParam(':id_usuario', $id_usuario_accion, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $nombre_usuario_accion = $row['nombre_user'];
+    }
+}
 function registrarAccion($conexion, $id_usuario, $nombre_usuario) {
     $sql = "INSERT INTO registro_acceso (id_usuario, nombre_usuario, fecha) 
             VALUES (:id_usuario, :nombre_usuario, NOW())";
@@ -75,6 +90,7 @@ function registrarAccion($conexion, $id_usuario, $nombre_usuario) {
     $stmt->bindParam(':nombre_usuario', $nombre_usuario, PDO::PARAM_STR);
     return $stmt->execute();
 }
+
 
 // Actualizar información del calzado
 if (isset($_POST["actualizar"])) {

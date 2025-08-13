@@ -54,14 +54,14 @@ $id_usuario_accion = $_SESSION['id_usuario'] ?? null;
 $nombre_usuario_accion = '';
 
 if ($id_usuario_accion) {
-    $sql_obtener_nombre_usuario = "SELECT nombre_user FROM usuario WHERE id_usuario = :id_usuario";
-    $stmt_nombre_usuario = $conexion->prepare($sql_obtener_nombre_usuario);
-    $stmt_nombre_usuario->bindParam(':id_usuario', $id_usuario_accion, PDO::PARAM_INT);
-    $stmt_nombre_usuario->execute();
-
-    if ($stmt_nombre_usuario->rowCount() > 0) {
-        $row_nombre_usuario = $stmt_nombre_usuario->fetch(PDO::FETCH_ASSOC);
-        $nombre_usuario_accion = $row_nombre_usuario['nombre_user'];
+    $sql = "SELECT nombre_user FROM usuario WHERE id_usuario = :id_usuario";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bindParam(':id_usuario', $id_usuario_accion, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    if ($stmt->rowCount() > 0) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $nombre_usuario_accion = $row['nombre_user'];
     }
 }
 
