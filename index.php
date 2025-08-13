@@ -18,7 +18,7 @@ if (!empty($_POST)) {
         $_SESSION['id_rol'] = $row["id_rol"];
 
         if ($row['id_rol'] == '1') {
-            header("Location: panel-admin.php"); // Redirige a la página de administrador
+            header("Location: panel-admin.php"); 
             exit(); //EVITA CICLO
         } elseif ($row['id_rol'] == '2') {
             header("Location: panel-empleado.php"); 
